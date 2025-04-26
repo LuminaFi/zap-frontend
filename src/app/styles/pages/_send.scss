@@ -1,0 +1,160 @@
+.send-container {
+  padding: 20px;
+  height: 100%;
+}
+
+.send-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.send-option-button {
+  width: 100%;
+  padding: 20px;
+  border: 2px solid #000;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #f8f8f8;
+  }
+  
+  span {
+    font-size: 16px;
+    font-weight: 500;
+  }
+}
+
+.send-option-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #666;
+  
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  span {
+    padding: 0 10px;
+    font-size: 14px;
+  }
+}
+
+.qr-scanner {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &__frame {
+    width: 250px;
+    height: 250px;
+    border: 2px solid #000;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-top: 3px solid #000;
+      border-left: 3px solid #000;
+      top: 10px;
+      left: 10px;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-bottom: 3px solid #000;
+      border-right: 3px solid #000;
+      bottom: 10px;
+      right: 10px;
+    }
+  }
+  
+  &__loading {
+    font-size: 16px;
+    color: #666;
+  }
+}
+
+.send-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  
+  &__address {
+    background: #f8f8f8;
+    padding: 16px;
+    border-radius: 12px;
+    
+    label {
+      display: block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    p {
+      font-size: 16px;
+      font-weight: 500;
+    }
+  }
+  
+  &__amount {
+    label {
+      display: block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      font-size: 16px;
+      
+      &:focus {
+        outline: none;
+        border-color: #000;
+      }
+    }
+  }
+  
+  &__submit {
+    margin-top: 20px;
+    padding: 16px;
+    background: #000;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+} 

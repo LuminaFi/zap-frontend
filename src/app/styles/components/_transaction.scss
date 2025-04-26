@@ -1,0 +1,71 @@
+.account-container {
+  padding-top: 16px;
+}
+
+.account-filter {
+  margin-bottom: 24px;
+  
+  &__select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #fff;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    
+    &:focus {
+      outline: none;
+      border-color: #000;
+    }
+  }
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transaction-item {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  
+  &__details {
+    padding: 16px;
+  }
+  
+  &__address,
+  &__token,
+  &__amount {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .label {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #000;
+    }
+  }
+  
+  &__divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 0 16px;
+  }
+} 
