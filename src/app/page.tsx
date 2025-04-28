@@ -1,28 +1,38 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
+import { useEffect } from 'react';
+import { ConnectButton } from '@xellar/kit';
+import { UnprotectedRoute } from './util/unprotected';
 
-export default function LoginPage() {
+export default function Home() {
   const router = useRouter();
+  const { address } = useAccount();
 
-  const handleConnectWallet = () => {
-    router.push('/account');
-  };
+  useEffect(() => {
+    if (address) {
+      router.push('/account');
+    }
+  }, [address, router]);
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <h1 className="login-title">Login</h1>
-        <div className="login-content">
-          <p className="login-subtitle">Connect Wallet</p>
-          <button 
-            className="connect-wallet-button"
-            onClick={handleConnectWallet}
-          >
-            Connect Wallet
-          </button>
+    <UnprotectedRoute>
+      <div className="login-page">
+        <div className="login-container">
+          {!address ? (
+            <>
+              <h1 className="login-title">Login</h1>
+              <div className="login-content">
+                <p className="login-subtitle">Connect Wallet</p>
+                <ConnectButton/>
+              </div>
+            </>
+          ): (
+            <h1 className="login-title">Authenticating...</h1>
+          )}
         </div>
       </div>
-    </div>
+    </UnprotectedRoute>
   );
 }

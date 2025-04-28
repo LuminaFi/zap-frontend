@@ -1,3 +1,4 @@
+import { Web3Provider } from './util/provider';
 import './styles/globals.scss';
 import { Inter } from 'next/font/google';
 
@@ -19,7 +20,9 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </head>
       <body className={inter.className}>
-        {children}
+        <Web3Provider>
+          {children}
+        </Web3Provider>
       </body>
     </html>
   );
