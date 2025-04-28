@@ -21,7 +21,7 @@ export default function SendPage() {
     const address = search.get("address") as string;
     if (address) {
       setSendData({ address });
-      setQRType("dynamic");
+      setQRType("static");
     }
   }, [search]);
 
