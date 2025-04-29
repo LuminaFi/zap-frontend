@@ -5,6 +5,11 @@ import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type QRResult = {
+  address?: string;
+  amount?: number;
+};
+
 const basicEthAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 
 const isValidEthereumAddress = (address: string) => {
@@ -48,8 +53,13 @@ export default function ScanQRPage() {
   }, []);
 
   const handleScan = (result: IDetectedBarcode[]) => {
-    if (isValidEthereumAddress(result[result.length - 1].rawValue)) {
-      router.push("/send?address=" + result[result.length - 1].rawValue);
+    const qrRes = JSON.parse(result[result.length - 1].rawValue) as QRResult;
+    if (isValidEthereumAddress(qrRes?.address ?? "")) {
+      router.push(
+        `/send?address=${qrRes?.address}${
+          qrRes?.amount ? `&amount=${qrRes?.amount}` : ""
+        }`
+      );
     } else {
       alert("Invalid address, please scan again");
     }
