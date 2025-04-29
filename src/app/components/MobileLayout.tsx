@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { BiQrScan } from 'react-icons/bi';
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md';
 import { RiWalletLine } from 'react-icons/ri';
+import { ProtectedRoute } from '../util/protected';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -23,44 +24,47 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
   const pathname = usePathname();
 
   return (
-    <div className="mobile-container">
-      <div className="mobile-container__header">
-        <h1 className="mobile-container__header-title">{title}</h1>
-        {showAvatar && (
-          <Link href="/profile" className="mobile-container__header-avatar">
-            {avatarText}
-          </Link>
-        )}
-      </div>
-      <div className="mobile-container__content">
-        {children}
-      </div>
-      <div className="bottom-sheet">
-        <Link
-          href="/scan"
-          className="bottom-sheet__qr-button"
-          aria-label="scan"
-        >
-          <BiQrScan size={32} />
-        </Link>
-        <nav className="bottom-sheet__navigation">
+    <ProtectedRoute>
+      <div className="mobile-container">
+        <div className="mobile-container__header">
+          <h1 className="mobile-container__header-title">{title}</h1>
+          {showAvatar && (
+            <Link href="/profile" className="mobile-container__header-avatar">
+              {avatarText}
+            </Link>
+          )}
+        </div>
+        <div className="mobile-container__content">
+          {children}
+        </div>
+        <div className="bottom-sheet">
           <Link
-            href="/account"
-            className={`nav-item ${pathname === '/account' ? 'active' : ''}`}
+            href="/send"
+            className="bottom-sheet__qr-button"
+            aria-label="Send"
           >
-            <MdOutlineAccountBalanceWallet size={24} />
-            <span>Account</span>
+            <BiQrScan size={32} />
           </Link>
-          <div className="nav-item-placeholder"></div>
-          <Link
-            href="/receive"
-            className={`nav-item ${pathname === '/receive' ? 'active' : ''}`}
-          >
-            <RiWalletLine size={24} />
-            <span>Receive</span>
-          </Link>
-        </nav>
+          <nav className="bottom-sheet__navigation">
+            <Link
+              href="/account"
+              className={`nav-item ${pathname === '/account' ? 'active' : ''}`}
+            >
+              <MdOutlineAccountBalanceWallet size={24} />
+              <span>Account</span>
+            </Link>
+            <div className="nav-item-placeholder"></div>
+            <Link
+              href="/receive"
+              className={`nav-item ${pathname === '/receive' ? 'active' : ''}`}
+            >
+              <RiWalletLine size={24} />
+              <span>Receive</span>
+            </Link>
+          </nav>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
+    
   );
 }; 
