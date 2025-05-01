@@ -39,7 +39,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
         </div>
         <div className="bottom-sheet">
           <Link
-            href="/send"
+            href="/scan"
             className="bottom-sheet__qr-button"
             aria-label="Send"
           >
