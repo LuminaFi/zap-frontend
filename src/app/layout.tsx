@@ -1,12 +1,13 @@
 import { Web3Provider } from './util/provider';
 import './styles/globals.scss';
 import { Inter } from 'next/font/google';
+import { ThemeProvider } from './providers/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Wallet App',
-  description: 'Mobile wallet application',
+  title: 'Bank Indonesia',
+  description: 'Indonesian banking mobile application',
 };
 
 export default function RootLayout({
@@ -20,9 +21,11 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </head>
       <body className={inter.className}>
-        <Web3Provider>
-          {children}
-        </Web3Provider>
+        <ThemeProvider>
+          <Web3Provider>
+            {children}
+          </Web3Provider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,9 +1,10 @@
 "use client";
 
 import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
-
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MobileLayout } from "../components/MobileLayout";
+import { BiQrScan } from 'react-icons/bi';
 
 type QRResult = {
   address?: string;
@@ -56,8 +57,7 @@ export default function ScanQRPage() {
     const qrRes = JSON.parse(result[result.length - 1].rawValue) as QRResult;
     if (isValidEthereumAddress(qrRes?.address ?? "")) {
       router.push(
-        `/send?address=${qrRes?.address}${
-          qrRes?.amount ? `&amount=${qrRes?.amount}` : ""
+        `/send?address=${qrRes?.address}${qrRes?.amount ? `&amount=${qrRes?.amount}` : ""
         }`
       );
     } else {
@@ -66,23 +66,37 @@ export default function ScanQRPage() {
   };
 
   return (
-    <div className="scan-container">
-      <div className="scan-area">
-        <h1>Scan QR</h1>
-        <div className="qr-scanner__frame">
-          <Scanner
-            allowMultiple
-            onScan={handleScan}
-            styles={{
-              container: {
-                visibility: isLoading ? "hidden" : "visible",
-              },
-              finderBorder: 0,
-            }}
-          />
+    <MobileLayout title="Scan QR" showAvatar>
+      <div className="scan-container">
+        <div className="scan-area">
+          <div className="scan-icon">
+            <BiQrScan size={32} color="#0066ff" />
+          </div>
+          <div className="qr-scanner__frame">
+            <Scanner
+              allowMultiple
+              onScan={handleScan}
+              styles={{
+                container: {
+                  visibility: isLoading ? "hidden" : "visible",
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: "350px",
+                  height: "350px",
+                },
+                video: {
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  borderRadius: "10px",
+                },
+                finderBorder: 0,
+              }}
+            />
+          </div>
+          <p>Please scan the QR code</p>
         </div>
-        <p>Please scan the QR code</p>
       </div>
-    </div>
+    </MobileLayout>
   );
 }

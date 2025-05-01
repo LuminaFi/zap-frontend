@@ -1,0 +1,88 @@
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  width: 100%;
+}
+
+.theme-toggle__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .icon {
+    font-size: 18px;
+    
+    &.sun {
+      color: var(--accent-color);
+    }
+    
+    &.moon {
+      color: var(--primary-dark);
+    }
+  }
+  
+  .theme-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+  }
+}
+
+.theme-toggle__switch {
+  position: relative;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  
+  .toggle-track {
+    display: block;
+    width: 50px;
+    height: 26px;
+    border-radius: 13px;
+    background-color: var(--primary-light);
+    position: relative;
+    transition: background-color 0.2s ease;
+  }
+  
+  .toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--surface-color);
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  &.is-dark .toggle-track {
+    background-color: var(--primary-dark);
+  }
+  
+  &.is-dark .toggle-thumb {
+    transform: translateX(24px);
+  }
+}
+
+/* Dark Mode Styles */
+[data-theme="dark"] {
+  .theme-toggle__label {
+    .theme-name {
+      color: var(--text-light);
+    }
+    
+    .icon {
+      &.sun {
+        color: rgba(255, 215, 0, 0.7);
+      }
+      
+      &.moon {
+        color: #a0b4ff;
+      }
+    }
+  }
+} 

@@ -1,0 +1,160 @@
+.account-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.account-balance-card {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-radius: 16px;
+  padding: 24px;
+  color: var(--text-light);
+  box-shadow: 0 8px 24px var(--shadow-color);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    left: -60px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.balance-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.balance-amount {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.balance-currency {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 20px;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  position: relative;
+  z-index: 2;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 24px;
+  padding: 8px 16px;
+  
+  svg {
+    font-size: 16px;
+  }
+}
+
+.transactions-section {
+  background-color: var(--surface-color);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.account-filter {
+  display: flex;
+  align-items: center;
+  background-color: var(--background-light);
+  border-radius: 8px;
+  padding: 2px 8px;
+  
+  .filter-icon {
+    color: var(--primary-color);
+    margin-right: 8px;
+  }
+}
+
+.account-filter__select {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--primary-color);
+  padding: 8px 4px;
+  font-weight: 500;
+  
+  &:focus {
+    outline: none;
+  }
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+.empty-transactions {
+  text-align: center;
+  padding: 24px 0;
+  color: #888;
+}
+
+/* Dark Mode Styles */
+[data-theme="dark"] {
+  .account-balance-card {
+    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-dark-dark));
+    box-shadow: 0 8px 24px var(--shadow-color-dark);
+  }
+  
+  .transactions-section {
+    background-color: var(--surface-dark);
+    box-shadow: 0 4px 12px var(--shadow-color-dark);
+  }
+  
+  .section-title {
+    color: var(--text-light);
+  }
+  
+  .account-filter {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .empty-transactions {
+    color: #777;
+  }
+} 
