@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { MobileLayout } from "../components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BACKEND_URL } from "../util/constant";
+import { BACKEND_URL, ETHEREUM_ADDRESS } from "../util/constant";
 import { type BaseError, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
 import type { AddressType, calculateAmountResponse, QRTypes, SendData, TransferLimitResponse } from "./types";
@@ -34,35 +34,7 @@ export default function SendPage() {
   }, [isConfirmed, router]);
 
   const mockCalculateAmount = async (amount: number) => {
-    const amountWithFee = {
-      "success": true,
-      "token": "ethereum",
-      "sourceAmount": 0.2285,
-      "sourceAmountFormatted": "0.22850000 ETH",
-      "idrxAmount": 10000000,
-      "idrxAmountFormatted": "Rp 10.000.000",
-      "fees": {
-        "token": "ethereum",
-        "tokenSymbol": "ETH",
-        "priceUsd": 2835.42,
-        "priceIdr": 43949010,
-        "adminFeePercentage": 0.005,
-        "adminFeeAmount": 0.00114,
-        "spreadFeePercentage": 0.002,
-        "spreadFeeAmount": 0.00046,
-        "totalFeePercentage": 0.007,
-        "totalFeeAmount": 0.0016,
-        "amountBeforeFees": 0.2285,
-        "amountAfterFees": 0.2269,
-        "exchangeRate": 43949010,
-        "timestamp": 1681234567890,
-        "adminFeePercentageFormatted": "0.50%",
-        "spreadFeePercentageFormatted": "0.20%",
-        "totalFeePercentageFormatted": "0.70%"
-      }
-    }
-
-    return `${amountWithFee.fees.amountAfterFees}`;
+    return `${0}`;
   }
 
   const calculateAmount = async (amount: number) => {
@@ -77,7 +49,7 @@ export default function SendPage() {
       throw new Error("Invalid transfer amount");
     }
 
-    const calculateSourcesResponse = await fetch(`${BACKEND_URL}/calculate-sources`, {
+    const calculateSourcesResponse = await fetch(`${BACKEND_URL}/calculate-sources?token=ethereum&idrxAmount=${amount}`, {
       method: "GET",
     });
     const amountWithFee: calculateAmountResponse = await calculateSourcesResponse.json();
@@ -85,7 +57,7 @@ export default function SendPage() {
       throw new Error("Failed to calculate amount");
     }
 
-    return `${amountWithFee.fees.amountAfterFees}`;
+    return `${amountWithFee.fees.amountBeforeFees + amountWithFee.fees.totalFeeAmount}`;
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -93,7 +65,7 @@ export default function SendPage() {
 
     mockCalculateAmount(sendData.amount!).then((amount) => {
       sendTransaction({
-        to: sendData.address,
+        to: `${ETHEREUM_ADDRESS}` as AddressType,
         value: parseEther(amount)
       });
 
