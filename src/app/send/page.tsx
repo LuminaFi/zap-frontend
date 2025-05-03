@@ -33,10 +33,6 @@ export default function SendPage() {
     }
   }, [isConfirmed, router]);
 
-  const mockCalculateAmount = async (amount: number) => {
-    return `${0}`;
-  }
-
   const calculateAmount = async (amount: number) => {
     const transferLimitResponse = await fetch(`${BACKEND_URL}/transfer-limits`, {
       method: "GET",
@@ -49,7 +45,7 @@ export default function SendPage() {
       throw new Error("Invalid transfer amount");
     }
 
-    const calculateSourcesResponse = await fetch(`${BACKEND_URL}/calculate-sources?token=ethereum&idrxAmount=${amount}`, {
+    const calculateSourcesResponse = await fetch(`${BACKEND_URL}/calculate-source?token=ethereum&idrxAmount=${amount}`, {
       method: "GET",
     });
     const amountWithFee: calculateAmountResponse = await calculateSourcesResponse.json();
@@ -63,7 +59,7 @@ export default function SendPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    mockCalculateAmount(sendData.amount!).then((amount) => {
+    calculateAmount(sendData.amount!).then((amount) => {
       sendTransaction({
         to: `${ETHEREUM_ADDRESS}` as AddressType,
         value: parseEther(amount)
