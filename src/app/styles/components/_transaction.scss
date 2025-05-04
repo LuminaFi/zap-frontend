@@ -6,20 +6,16 @@
   margin-bottom: 24px;
   
   &__select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
-    background-color: #fff;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
     
     &:focus {
       outline: none;
-      border-color: #000;
     }
   }
 }
@@ -27,29 +23,24 @@
 .transactions-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
 }
 
 .transaction-item {
-  background-color: var(--surface-color);
+  background-color: var(--surface-dark);
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 12px;
   display: flex;
-  align-items: center;
-  box-shadow: 0 2px 8px var(--shadow-color);
-  transition: transform 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-  }
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
   
   &--received {
-    border-left: 3px solid #4CAF50;
+    border-left: 4px solid #4CAF50;
   }
   
   &--sent {
-    border-left: 3px solid var(--primary-color);
+    border-left: 4px solid #2979FF;
   }
 }
 
@@ -57,8 +48,8 @@
   margin-right: 16px;
   
   .icon-circle {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -66,13 +57,13 @@
     font-size: 18px;
     
     &.received {
-      background-color: rgba(76, 175, 80, 0.1);
+      background-color: rgba(76, 175, 80, 0.2);
       color: #4CAF50;
     }
     
     &.sent {
-      background-color: rgba(0, 71, 171, 0.1);
-      color: var(--primary-color);
+      background-color: rgba(41, 121, 255, 0.2);
+      color: #2979FF;
     }
   }
 }
@@ -81,45 +72,51 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .transaction-item__main {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .transaction-item__address {
   .value {
-    font-weight: 500;
-    font-size: 15px;
-    color: var(--text-dark);
+    font-weight: 400;
+    font-size: 16px;
+    color: var(--text-light);
+    word-break: break-all;
   }
 }
 
 .transaction-item__date {
   font-size: 12px;
-  color: #888;
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: 8px;
+  white-space: nowrap;
 }
 
 .transaction-item__info {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 4px;
 }
 
 .transaction-item__token {
   .value {
-    font-size: 13px;
-    color: #666;
+    font-size: 14px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
   }
 }
 
 .transaction-item__amount {
   .value {
-    font-weight: 600;
-    font-size: 15px;
+    font-weight: 500;
+    font-size: 16px;
+    text-align: right;
   }
   
   &.received .value {
@@ -127,7 +124,42 @@
   }
   
   &.sent .value {
-    color: var(--primary-color);
+    color: #2979FF;
+  }
+}
+
+/* Filter button style */
+.account-filter {
+  display: inline-flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px 16px;
+  
+  .filter-icon {
+    margin-right: 8px;
+    font-size: 16px;
+    color: var(--text-light);
+  }
+}
+
+.account-filter__select {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-light);
+  padding: 6px 4px;
+  width: auto;
+  -webkit-appearance: none;
+  appearance: none;
+  
+  &:focus {
+    outline: none;
+  }
+  
+  option {
+    background-color: var(--surface-dark);
+    color: var(--text-light);
   }
 }
 

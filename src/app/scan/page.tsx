@@ -55,6 +55,7 @@ export default function ScanQRPage() {
 
   const handleScan = (result: IDetectedBarcode[]) => {
     const qrRes = JSON.parse(result[result.length - 1].rawValue) as QRResult;
+    console.log(qrRes, 'line 58');
     if (isValidEthereumAddress(qrRes?.address ?? "")) {
       router.push(
         `/send?address=${qrRes?.address}${qrRes?.amount ? `&amount=${qrRes?.amount}` : ""

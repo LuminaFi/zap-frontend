@@ -1,11 +1,13 @@
 @import "./components/mobile-container";
 @import "./components/transaction";
 @import "./components/theme-toggle";
+@import "./components/modal";
 @import "./pages/login";
 @import "./pages/send";
 @import "./pages/scan";
 @import "./pages/account";
 @import "./pages/profile";
+@import "./pages/transaction-detail";
 
 :root {
   /* Light Mode Variables */
