@@ -6,8 +6,9 @@ import { TransactionSkeleton } from '../components/TransactionSkeleton';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar } from 'react-icons/fi';
+import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
+import { useLanguage } from '../providers/LanguageProvider';
 
 // Types for the transaction data from API
 interface ApiTransaction {
@@ -80,6 +81,7 @@ const getFilterDisplayText = (
 };
 
 export default function AccountPage() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
 
   // Initialize state from URL params
@@ -87,6 +89,7 @@ export default function AccountPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(true);
   const [balance, setBalance] = useState<string>('0');
   const [currentFilter, setCurrentFilter] = useState<FilterType>(
     (searchParams.get('filter') as FilterType) || 'all'
@@ -273,6 +276,35 @@ export default function AccountPage() {
   const hasActiveFilters = direction !== 'all' || hasDateFilter;
   const filterDisplayText = getFilterDisplayText(direction, hasDateFilter);
 
+  // Calculate today's date in YYYY-MM-DD format for max attribute
+  const today = new Date().toISOString().split('T')[0];
+
+  // Add isRefreshing state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Add a refreshTrigger state to force effects to run again
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Refresh function to reload both balance and transaction data
+  const handleRefreshData = () => {
+    console.log('REFRESH BUTTON CLICKED');
+    setIsRefreshing(true);
+    
+    // Reset data states
+    setTransactions([]);
+    setCurrentPage(1);
+    setError(null);
+    
+    // Increment trigger to force both effects to re-run
+    setRefreshTrigger(prev => prev + 1);
+    
+    // Turn off refreshing after a delay to show animation
+    setTimeout(() => {
+      setIsRefreshing(false);
+      console.log('Refresh animation completed');
+    }, 800);
+  };
+
   // Fetch transactions from the API
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -303,16 +335,6 @@ export default function AccountPage() {
 
         // Set hasMore flag based on API response
         setHasMore(data.pagination.hasMore);
-
-        if (isInitialLoad) {
-          // Calculate balance from total received minus total sent
-          const totalReceived = parseFloat(data.summary.totalReceived || '0');
-          const totalSent = parseFloat(data.summary.totalSent || '0');
-          const currentBalance = totalReceived - totalSent;
-
-          // Format balance with commas
-          setBalance(currentBalance.toLocaleString('id-ID'));
-        }
 
         // Transform API transactions to our component format
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
@@ -345,132 +367,192 @@ export default function AccountPage() {
     };
 
     fetchTransactions();
-  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit]);
+  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger]);
+
+  // Fetch the balance
+  useEffect(() => {
+    const fetchBalance = async () => {
+      setIsBalanceLoading(true);
+      
+      try {
+        const response = await fetch(`https://zap-service-jkce.onrender.com/idrx-balance/${userAddress}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch balance: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Use the exactly formatted balance from API
+          setBalance(data.idrBalanceFormatted || 'Rp 0');
+        } else {
+          console.error('Failed to fetch balance:', data.error);
+          setBalance('Rp 0');
+        }
+      } catch (err) {
+        console.error('Error fetching balance:', err);
+        setBalance('Rp 0');
+      } finally {
+        setIsBalanceLoading(false);
+      }
+    };
+    
+    fetchBalance();
+  }, [userAddress, refreshTrigger]);
 
   // Filter transactions based on selected type
   const filteredTransactions = currentFilter === 'all'
     ? transactions
     : transactions.filter(tx => tx.type === currentFilter);
 
+  // Debug message to check component mounts
+  useEffect(() => {
+    console.log('Account page mounted');
+  }, []);
+
   return (
-    <MobileLayout title="My Account" showAvatar>
+    <MobileLayout title={t('account.title')} showAvatar>
       <div className="account-container">
         <div className="account-balance-card">
-          <h3 className="balance-label">Total Balance</h3>
+          <div className="balance-card-header">
+            <h3 className="balance-label">{t('account.totalBalance')}</h3>
+            <div className="refresh-wrapper">
+              <button 
+                type="button"
+                onClick={handleRefreshData}
+                className={`refresh-button ${isRefreshing ? 'refreshing' : ''}`}
+                disabled={isRefreshing}
+                aria-label={t('account.refresh')}
+                style={{ 
+                  padding: '8px',
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  outline: 'none',
+                  position: 'relative',
+                  zIndex: 10
+                }}
+              >
+                <FiRefreshCw size={18} />
+              </button>
+            </div>
+          </div>
           <div className="balance-amount">
-            {isLoading && currentPage === 1 ?
+            {isBalanceLoading ? 
               <div className="shimmer" style={{ height: '36px', width: '180px' }}></div> :
-              `Rp ${balance}`
+              `${balance}`
             }
           </div>
-          <div className="balance-currency">IDRX</div>
-
+          <div className="balance-currency">{t('account.currency')}</div>
+          
           <div className="quick-actions">
             <Button variant="primary" size="small" fullWidth={false} className="action-button">
-              <FiArrowUpRight /> <span>Send</span>
+              <FiArrowUpRight /> <span>{t('account.send')}</span>
             </Button>
             <Button variant="outline" size="small" fullWidth={false} className="action-button">
-              <FiArrowDownLeft /> <span>Receive</span>
+              <FiArrowDownLeft /> <span>{t('account.receive')}</span>
             </Button>
           </div>
         </div>
 
         <div className="transactions-section">
           <div className="section-header">
-            <h3 className="section-title">Transaction History</h3>
-
+            <h3 className="section-title">{t('account.transactionHistory')}</h3>
+            
             <div className="filter-actions">
-              <div
+              <div 
                 className={`filter-dropdown ${hasActiveFilters ? 'active' : ''}`}
                 onClick={() => setShowFilterModal(true)}
               >
                 <FiFilter />
                 <span>{filterDisplayText}</span>
               </div>
-
             </div>
           </div>
-
+          
           {/* Filter Modal */}
-          <Modal
-            isOpen={showFilterModal}
-            onClose={() => setShowFilterModal(false)}
-            title="Filter Transactions"
+          <Modal 
+            isOpen={showFilterModal} 
+            onClose={() => setShowFilterModal(false)} 
+            title={t('filter.title')}
           >
             <div className="filter-content">
               <div className="filter-group">
-                <label>Direction</label>
+                <label>{t('filter.direction')}</label>
                 <div className="custom-select">
-                  <select
+                  <select 
                     value={tempDirection}
                     onChange={(e) => setTempDirection(e.target.value as DirectionType)}
                     className="filter-select"
                   >
-                    <option value="all">All</option>
-                    <option value="from">From Me</option>
-                    <option value="to">To Me</option>
+                    <option value="all">{t('filter.all')}</option>
+                    <option value="from">{t('filter.fromMe')}</option>
+                    <option value="to">{t('filter.toMe')}</option>
                   </select>
                 </div>
               </div>
-
+              
               <div className="filter-group">
-                <label>Sort</label>
+                <label>{t('filter.sort')}</label>
                 <div className="custom-select">
-                  <select
+                  <select 
                     value={tempSort}
                     onChange={(e) => setTempSort(e.target.value as SortType)}
                     className="filter-select"
                   >
-                    <option value="desc">Newest First</option>
-                    <option value="asc">Oldest First</option>
+                    <option value="desc">{t('filter.newest')}</option>
+                    <option value="asc">{t('filter.oldest')}</option>
                   </select>
                 </div>
               </div>
-
+              
               <div className="filter-group">
-                <label>From Date</label>
+                <label>{t('filter.fromDate')}</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input
-                    type="date"
+                  <input 
+                    type="date" 
                     value={tempStartDate}
                     onChange={(e) => setTempStartDate(e.target.value)}
                     className="date-input"
+                    max={today}
                   />
                 </div>
               </div>
-
+              
               <div className="filter-group">
-                <label>To Date</label>
+                <label>{t('filter.toDate')}</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input
-                    type="date"
+                  <input 
+                    type="date" 
                     value={tempEndDate}
                     onChange={(e) => setTempEndDate(e.target.value)}
                     className="date-input"
+                    max={today}
                   />
                 </div>
               </div>
-
+              
               <div className="filter-button-row">
-                <Button
-                  variant="outline"
-                  size="small"
+                <Button 
+                  variant="outline" 
+                  size="small" 
                   onClick={resetFilters}
                   className="reset-button"
                   fullWidth
                 >
-                  Reset
+                  {t('filter.reset')}
                 </Button>
-                <Button
-                  variant="primary"
-                  size="small"
+                <Button 
+                  variant="primary" 
+                  size="small" 
                   onClick={applyFilters}
                   className="apply-button"
                   fullWidth
                 >
-                  Apply Filters
+                  {t('filter.apply')}
                 </Button>
               </div>
             </div>
@@ -515,7 +597,7 @@ export default function AccountPage() {
               </>
             ) : (
               <div className="empty-transactions">
-                <p>No transactions found</p>
+                <p>{t('account.noTransactions')}</p>
               </div>
             )}
           </div>

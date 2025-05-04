@@ -97,15 +97,10 @@ export default function TransactionDetailPage() {
   
   // Determine if transaction is sent or received
   const isSent = transaction?.from?.toLowerCase() === userAddress.toLowerCase();
-  
-  // Navigate back to transactions list
-  const handleBack = () => {
+    const handleBack = () => {
     router.back();
   };
-  
-  // Open block explorer (e.g. Etherscan) to view transaction
-  const openExplorer = () => {
-    // Replace with the correct explorer URL for your blockchain
+    const openExplorer = () => {
     window.open(`https://etherscan.io/tx/${transaction?.hash}`, '_blank');
   };
   

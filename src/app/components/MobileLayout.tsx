@@ -7,6 +7,7 @@ import { BiQrScan } from 'react-icons/bi';
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md';
 import { RiWalletLine } from 'react-icons/ri';
 import { ProtectedRoute } from '../util/protected';
+import { useLanguage } from '../providers/LanguageProvider';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -22,6 +23,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
   avatarText = 'JK'
 }) => {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <ProtectedRoute>
@@ -41,7 +43,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
           <Link
             href="/scan"
             className="bottom-sheet__qr-button"
-            aria-label="Send"
+            aria-label={t('nav.send')}
           >
             <BiQrScan size={32} />
           </Link>
@@ -51,7 +53,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
               className={`nav-item ${pathname === '/account' ? 'active' : ''}`}
             >
               <MdOutlineAccountBalanceWallet size={24} />
-              <span>Account</span>
+              <span>{t('nav.account')}</span>
             </Link>
             <div className="nav-item-placeholder"></div>
             <Link
@@ -59,7 +61,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
               className={`nav-item ${pathname === '/receive' ? 'active' : ''}`}
             >
               <RiWalletLine size={24} />
-              <span>Receive</span>
+              <span>{t('nav.receive')}</span>
             </Link>
           </nav>
         </div>

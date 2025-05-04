@@ -18,8 +18,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
         <span className="icon sun"><FiSun /></span>
         <span className="theme-name">Light</span>
       </div>
-      
-      <button 
+
+      <button
         onClick={toggleTheme}
         className={`theme-toggle__switch ${isDark ? 'is-dark' : 'is-light'}`}
         aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
@@ -28,7 +28,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
           <span className="toggle-thumb"></span>
         </span>
       </button>
-      
+
       <div className="theme-toggle__label">
         <span className="icon moon"><FiMoon /></span>
         <span className="theme-name">Dark</span>

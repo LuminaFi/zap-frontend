@@ -4,6 +4,8 @@ import { MobileLayout } from '../components/MobileLayout';
 import { FormField } from '../components/FormField';
 import { Button } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { LanguageToggle } from '../components/LanguageToggle';
+import { useLanguage } from '../providers/LanguageProvider';
 import { useDisconnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { FiSettings, FiUser, FiShield } from 'react-icons/fi';
@@ -11,6 +13,7 @@ import { FiSettings, FiUser, FiShield } from 'react-icons/fi';
 export default function ProfilePage() {
   const router = useRouter();
   const { disconnect } = useDisconnect();
+  const { t } = useLanguage();
 
   const handleRemoveWallet = () => {
     disconnect();
@@ -18,7 +21,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <MobileLayout title="Profile" showAvatar>
+    <MobileLayout title={t('profile.title')} showAvatar>
       <div className="profile-container">
         <div className="profile-section">
           <div className="profile-header">
@@ -33,16 +36,16 @@ export default function ProfilePage() {
         <div className="profile-section">
           <h3 className="section-title">
             <FiUser className="section-icon" />
-            Account Information
+            {t('profile.accountInfo')}
           </h3>
           <FormField
-            label="Wallet Address"
+            label={t('profile.walletAddress')}
             type="text"
             readOnly
             value="0x1234567890abcdef1234567890abcdef12345678"
           />
           <FormField
-            label="Balance"
+            label={t('profile.balance')}
             type="text"
             readOnly
             value="1,000,000 IDRX"
@@ -52,20 +55,25 @@ export default function ProfilePage() {
         <div className="profile-section">
           <h3 className="section-title">
             <FiSettings className="section-icon" />
-            Appearance
+            {t('profile.appearance')}
           </h3>
           <div className="setting-item">
-            <div className="setting-item__label">Theme Mode</div>
+            <div className="setting-item__label">{t('profile.theme')}</div>
             <ThemeToggle />
+          </div>
+          <div className="setting-item">
+            <LanguageToggle />
           </div>
         </div>
         
         <div className="profile-section">
           <h3 className="section-title">
             <FiShield className="section-icon" />
-            Security
+            {t('profile.security')}
           </h3>
-          <Button variant="danger" onClick={handleRemoveWallet}>Disconnect Wallet</Button>
+          <Button variant="danger" onClick={handleRemoveWallet}>
+            {t('profile.disconnect')}
+          </Button>
         </div>
       </div>
     </MobileLayout>
