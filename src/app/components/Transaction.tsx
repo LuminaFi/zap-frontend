@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { FiArrowUpRight, FiArrowDownLeft } from 'react-icons/fi';
 
 interface TransactionProps {
@@ -9,6 +10,7 @@ interface TransactionProps {
   amount: string | number;
   type?: 'sent' | 'received';
   date?: string;
+  id?: string;
 }
 
 export const Transaction: React.FC<TransactionProps> = ({
@@ -16,12 +18,46 @@ export const Transaction: React.FC<TransactionProps> = ({
   token,
   amount,
   type = 'sent',
-  date
+  date,
+  id
 }) => {
+  const router = useRouter();
   const isReceived = type === 'received';
-  
+  const truncateAddress = (address: string) => {
+    if (!address || address.length < 10) return address;
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return '';
+
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const handleClick = () => {
+    if (id) {
+      router.push(`/transaction/${id}`);
+    }
+  };
+
   return (
-    <div className={`transaction-item ${isReceived ? 'transaction-item--received' : 'transaction-item--sent'}`}>
+    <div
+      className={`transaction-item ${isReceived ? 'transaction-item--received' : 'transaction-item--sent'}`}
+      onClick={handleClick}
+      style={{ cursor: id ? 'pointer' : 'default' }}
+    >
       <div className="transaction-item__icon">
         {isReceived ? (
           <div className="icon-circle received">
@@ -33,21 +69,21 @@ export const Transaction: React.FC<TransactionProps> = ({
           </div>
         )}
       </div>
-      
+
       <div className="transaction-item__details">
         <div className="transaction-item__main">
           <div className="transaction-item__address">
-            <span className="value">{txAddress}</span>
+            <span className="value">{truncateAddress(txAddress)}</span>
           </div>
-          {date && <div className="transaction-item__date">{date}</div>}
+          {date && <div className="transaction-item__date">{formatDateTime(date)}</div>}
         </div>
-        
+
         <div className="transaction-item__info">
           <div className="transaction-item__token">
             <span className="value">{token}</span>
           </div>
           <div className={`transaction-item__amount ${isReceived ? 'received' : 'sent'}`}>
-            <span className="value">{isReceived ? '+' : '-'} {amount}</span>
+            <span className="value">{isReceived ? '+ ' : '- '}{amount}</span>
           </div>
         </div>
       </div>

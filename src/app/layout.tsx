@@ -2,6 +2,7 @@ import { Web3Provider } from './util/provider';
 import './styles/globals.scss';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from './providers/ThemeProvider';
+import { LanguageProvider } from './providers/LanguageProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,9 +23,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          <Web3Provider>
-            {children}
-          </Web3Provider>
+          <LanguageProvider>
+            <Web3Provider>
+              {children}
+            </Web3Provider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

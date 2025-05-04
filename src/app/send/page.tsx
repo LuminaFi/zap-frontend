@@ -7,10 +7,16 @@ import { BACKEND_URL, ETHEREUM_ADDRESS } from "../util/constant";
 import { type BaseError, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
 import type { AddressType, calculateAmountResponse, QRTypes, SendData, TransferLimitResponse } from "./types";
+import { Button } from "../components/Button";
+import { useLanguage } from "../providers/LanguageProvider";
+import { useTheme } from "../providers/ThemeProvider"; // We'll create this next
 
 export default function SendPage() {
+  const { t } = useLanguage();
+  const { theme } = useTheme(); // Get current theme
   const [qrType, setQRType] = useState<QRTypes>("static");
   const [sendData, setSendData] = useState<Partial<SendData>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const search = useSearchParams();
 
@@ -38,9 +44,9 @@ export default function SendPage() {
       method: "GET",
     });
     const transferLimit: TransferLimitResponse = await transferLimitResponse.json();
-    if (!transferLimit || 
+    if (!transferLimit ||
       !transferLimit.success ||
-      amount < parseFloat(transferLimit.minTransferAmount) || 
+      amount < parseFloat(transferLimit.minTransferAmount) ||
       amount > parseFloat(transferLimit.maxTransferAmount)) {
       throw new Error("Invalid transfer amount");
     }
@@ -58,6 +64,7 @@ export default function SendPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     calculateAmount(sendData.amount!).then((amount) => {
       sendTransaction({
@@ -69,40 +76,47 @@ export default function SendPage() {
     }).catch((error) => {
       console.error("Error sending transaction:", error);
       alert("Error sending transaction: " + error.message);
+    }).finally(() => {
+      setIsSubmitting(false);
     });
   };
 
   return (
-    <MobileLayout title="Send" showAvatar>
-      <div className="send-container">
+    <MobileLayout title={t('send.title') || "Send"} showAvatar>
+      <div className={`send-container ${theme}`}>
         <form onSubmit={handleSubmit} className="send-form">
           {sendData.address && (
-            <div className="send-form__address">
-              <label>Recipient Address</label>
-              <p>{sendData.address}</p>
+            <div className="send-form__field">
+              <label className="field-label">{t('send.recipientAddress') || "Recipient Address"}</label>
+              <div className={`address-display ${theme}`}>
+                <p className="address-text">{sendData.address}</p>
+              </div>
             </div>
           )}
+
           {qrType === "dynamic" && (
-            <div className="send-form__address">
-              <label>Amount</label>
-              <p>
-                IDRX{" "}
-                {new Intl.NumberFormat("id-ID", {
-                  style: "decimal",
-                  currency: "IDR",
-                }).format(sendData?.amount as number)}
-              </p>
+            <div className="send-form__field">
+              <label className="field-label">{t('send.amount') || "Amount"}</label>
+              <div className={`amount-display ${theme}`}>
+                <p className="amount-text">
+                  {t('send.idrxPrefix') || "IDRX"}{" "}
+                  {new Intl.NumberFormat("id-ID", {
+                    style: "decimal",
+                    currency: "IDR",
+                  }).format(sendData?.amount as number)}
+                </p>
+              </div>
             </div>
           )}
 
           {qrType === "static" && (
-            <>
-              <div className="send-form__amount">
-                <label htmlFor="amount">Amount</label>
+            <div className="send-form__field">
+              <label className="field-label" htmlFor="amount">{t('send.amount') || "Amount"}</label>
+              <div className="input-wrapper">
                 <input
                   id="amount"
                   type="number"
-                  placeholder="Enter amount"
+                  placeholder={t('send.enterAmount') || "Enter amount"}
                   value={sendData.amount || ""}
                   onChange={(e) =>
                     setSendData({
@@ -111,18 +125,28 @@ export default function SendPage() {
                     })
                   }
                   required
+                  className={`amount-input ${theme}`}
                 />
               </div>
-            </>
+            </div>
           )}
-
-          <button type="submit" className="send-form__submit" disabled={isConfirming}>
-            Send
-          </button>
 
           {error && (
-            <div>Error: {(error as BaseError).shortMessage || error.message}</div>
+            <div className={`error-message ${theme}`}>
+              {(error as BaseError).shortMessage || error.message}
+            </div>
           )}
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="large"
+            fullWidth
+            disabled={isConfirming || isSubmitting}
+            className="send-button"
+          >
+            {isConfirming ? (t('send.processing') || "Processing...") : (t('send.sendButton') || "Send")}
+          </Button>
         </form>
       </div>
     </MobileLayout>

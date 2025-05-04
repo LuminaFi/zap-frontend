@@ -1,11 +1,14 @@
 @import "./components/mobile-container";
 @import "./components/transaction";
 @import "./components/theme-toggle";
+@import "./components/language-toggle";
+@import "./components/modal";
 @import "./pages/login";
 @import "./pages/send";
 @import "./pages/scan";
 @import "./pages/account";
 @import "./pages/profile";
+@import "./pages/transaction-detail";
 
 :root {
   /* Light Mode Variables */
@@ -33,7 +36,6 @@
   --shadow-color-dark: rgba(0, 0, 0, 0.3); /* Dark shadow */
 }
 
-/* Apply dark mode variables when data-theme="dark" is set */
 [data-theme="dark"] {
   --primary-color: var(--primary-color-dark);
   --primary-light: var(--primary-light-dark);

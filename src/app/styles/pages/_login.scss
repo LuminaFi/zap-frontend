@@ -46,7 +46,6 @@
   z-index: 1;
 }
 
-/* Electric border effect */
 .lightning-effect::before {
   content: '';
   position: absolute;
@@ -64,7 +63,6 @@
   animation: glow 5s infinite;
 }
 
-/* Eagle highlight effect */
 .lightning-effect::after {
   content: '';
   position: absolute;
@@ -80,7 +78,6 @@
   animation: eagleGlow 5s infinite;
 }
 
-/* Lightning bolt small sparks */
 .logo-container::before,
 .logo-container::after {
   content: '';
@@ -97,13 +94,11 @@
   animation: spark 5s infinite;
 }
 
-/* First spark - centered on the logo */
 .logo-container::before {
   transform: translate(-50%, -50%) rotate(45deg);
   animation-delay: 0.1s;
 }
 
-/* Second spark - centered on the logo */
 .logo-container::after {
   transform: translate(-50%, -50%) rotate(-45deg);
   animation-delay: 0.2s;
@@ -247,14 +242,12 @@
   animation: spin 1s linear infinite;
 }
 
-/* Enhanced spark animation */
 @keyframes spark {
   0%, 100% {
     opacity: 0;
     height: 0;
     box-shadow: none;
   }
-  /* First flash */
   10% {
     opacity: 0.9;
     height: 20px;
@@ -279,7 +272,6 @@
     opacity: 0;
     height: 0;
   }
-  /* Second flash */
   60% {
     opacity: 0.9;
     height: 25px;
@@ -303,7 +295,6 @@
   }
 }
 
-/* Glow effect for the whole logo */
 @keyframes glow {
   0%, 100% {
     opacity: 0.1;
@@ -343,7 +334,6 @@
   }
 }
 
-/* Eagle highlight animation */
 @keyframes eagleGlow {
   0%, 100% {
     opacity: 0;
@@ -408,7 +398,6 @@
   }
 }
 
-/* Dark Mode Styles */
 [data-theme="dark"] {
   .login-wrapper {
     background: var(--background-dark);

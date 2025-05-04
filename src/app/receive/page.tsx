@@ -18,7 +18,7 @@ export default function ReceivePage() {
           <div className="qr-container">
             <QRCode
               value={JSON.stringify({
-                address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+                address: "0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a",
               })}
               qrStyle="dots"
               eyeRadius={10}
@@ -55,7 +55,7 @@ export default function ReceivePage() {
               <QRCode
                 value={JSON.stringify({
                   amount,
-                  address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+                  address: "0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a",
                 })}
                 qrStyle="dots"
                 eyeRadius={10}
