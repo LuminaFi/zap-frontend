@@ -3,22 +3,22 @@
 import { useEffect, useState } from "react";
 import { MobileLayout } from "../components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-
-type QRTypes = "static" | "dynamic";
-
-interface SendData {
-  address?: string;
-  amount?: number;
-}
+import { BACKEND_URL, ETHEREUM_ADDRESS } from "../util/constant";
+import { type BaseError, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther } from "viem";
+import type { AddressType, calculateAmountResponse, QRTypes, SendData, TransferLimitResponse } from "./types";
 
 export default function SendPage() {
   const [qrType, setQRType] = useState<QRTypes>("static");
-  const [sendData, setSendData] = useState<SendData>({});
+  const [sendData, setSendData] = useState<Partial<SendData>>({});
   const router = useRouter();
   const search = useSearchParams();
 
+  const { data: hash, error, sendTransaction } = useSendTransaction();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+
   useEffect(() => {
-    const address = search.get("address") as string;
+    const address = search.get("address") as AddressType;
     const amount = Number(search.get("amount") as string);
     if (address) {
       setSendData({ address, amount });
@@ -26,10 +26,50 @@ export default function SendPage() {
     setQRType(amount ? "dynamic" : "static");
   }, [search]);
 
+
+  useEffect(() => {
+    if (isConfirmed) {
+      router.push("/account");
+    }
+  }, [isConfirmed, router]);
+
+  const calculateAmount = async (amount: number) => {
+    const transferLimitResponse = await fetch(`${BACKEND_URL}/transfer-limits`, {
+      method: "GET",
+    });
+    const transferLimit: TransferLimitResponse = await transferLimitResponse.json();
+    if (!transferLimit || 
+      !transferLimit.success ||
+      amount < parseFloat(transferLimit.minTransferAmount) || 
+      amount > parseFloat(transferLimit.maxTransferAmount)) {
+      throw new Error("Invalid transfer amount");
+    }
+
+    const calculateSourcesResponse = await fetch(`${BACKEND_URL}/calculate-source?token=ethereum&idrxAmount=${amount}`, {
+      method: "GET",
+    });
+    const amountWithFee: calculateAmountResponse = await calculateSourcesResponse.json();
+    if (!amountWithFee || !amountWithFee.success) {
+      throw new Error("Failed to calculate amount");
+    }
+
+    return `${amountWithFee.fees.amountBeforeFees + amountWithFee.fees.totalFeeAmount}`;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Sending transaction:", sendData);
-    router.push("/account");
+
+    calculateAmount(sendData.amount!).then((amount) => {
+      sendTransaction({
+        to: `${ETHEREUM_ADDRESS}` as AddressType,
+        value: parseEther(amount)
+      });
+
+      console.log("Transaction sent:", hash);
+    }).catch((error) => {
+      console.error("Error sending transaction:", error);
+      alert("Error sending transaction: " + error.message);
+    });
   };
 
   return (
@@ -76,9 +116,13 @@ export default function SendPage() {
             </>
           )}
 
-          <button type="submit" className="send-form__submit">
+          <button type="submit" className="send-form__submit" disabled={isConfirming}>
             Send
           </button>
+
+          {error && (
+            <div>Error: {(error as BaseError).shortMessage || error.message}</div>
+          )}
         </form>
       </div>
     </MobileLayout>

@@ -1,0 +1,2 @@
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+export const ETHEREUM_ADDRESS = process.env.NEXT_PUBLIC_ETHEREUM_ADDRESS!;
