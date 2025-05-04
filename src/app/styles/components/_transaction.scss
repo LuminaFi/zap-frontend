@@ -27,13 +27,20 @@
 }
 
 .transaction-item {
-  background-color: var(--surface-dark);
+  background-color: var(--surface-color);
   border-radius: 12px;
   padding: 16px;
   display: flex;
   align-items: flex-start;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
   
   &--received {
     border-left: 4px solid #4CAF50;
@@ -85,14 +92,14 @@
   .value {
     font-weight: 400;
     font-size: 16px;
-    color: var(--text-light);
+    color: var(--text-dark);
     word-break: break-all;
   }
 }
 
 .transaction-item__date {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(0, 0, 0, 0.5);
   margin-left: 8px;
   white-space: nowrap;
 }
@@ -108,7 +115,7 @@
   .value {
     font-size: 14px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -163,11 +170,36 @@
   }
 }
 
-/* Dark Mode Styles */
-[data-theme="dark"] {
+/* Light Mode Styles */
+[data-theme="light"] {
   .transaction-item {
-    background-color: var(--surface-dark);
-    box-shadow: 0 2px 8px var(--shadow-color-dark);
+    background-color: var(--surface-color);
+    box-shadow: 0 2px 8px var(--shadow-color);
+    border-color: transparent;
+    
+    &--received {
+      border-left: 4px solid #4CAF50;
+    }
+    
+    &--sent {
+      border-left: 4px solid #2979FF;
+    }
+    
+    &:hover {
+      background-color: #f9fbff;
+    }
+  }
+  
+  .transaction-item__icon {
+    .icon-circle {
+      &.received {
+        background-color: rgba(76, 175, 80, 0.15);
+      }
+      
+      &.sent {
+        background-color: rgba(41, 121, 255, 0.15);
+      }
+    }
   }
   
   .transaction-item__address {
@@ -177,12 +209,74 @@
   }
   
   .transaction-item__date {
-    color: #777;
+    color: rgba(0, 0, 0, 0.5);
   }
   
   .transaction-item__token {
     .value {
-      color: #777;
+      color: rgba(0, 0, 0, 0.6);
+    }
+  }
+  
+  .account-filter {
+    background-color: rgba(0, 0, 0, 0.05);
+    
+    .filter-icon {
+      color: var(--text-dark);
+    }
+  }
+  
+  .account-filter__select {
+    color: var(--text-dark);
+    
+    option {
+      background-color: var(--surface-color);
+      color: var(--text-dark);
+    }
+  }
+}
+
+/* Dark Mode Styles */
+[data-theme="dark"] {
+  .transaction-item {
+    background-color: var(--surface-dark);
+    box-shadow: 0 2px 8px var(--shadow-color-dark);
+    
+    &:hover {
+      background-color: #1c2231;
+    }
+  }
+  
+  .transaction-item__address {
+    .value {
+      color: var(--text-light);
+    }
+  }
+  
+  .transaction-item__date {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .transaction-item__token {
+    .value {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+  
+  .account-filter {
+    background-color: rgba(255, 255, 255, 0.1);
+    
+    .filter-icon {
+      color: var(--text-light);
+    }
+  }
+  
+  .account-filter__select {
+    color: var(--text-light);
+    
+    option {
+      background-color: var(--surface-dark);
+      color: var(--text-light);
     }
   }
 } 

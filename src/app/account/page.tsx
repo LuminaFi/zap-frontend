@@ -2,10 +2,11 @@
 
 import { MobileLayout } from '../components/MobileLayout';
 import { Transaction } from '../components/Transaction';
+import { TransactionSkeleton } from '../components/TransactionSkeleton';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiSearch } from 'react-icons/fi';
+import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 
 // Types for the transaction data from API
@@ -67,7 +68,7 @@ type SortType = 'asc' | 'desc';
 
 // Helper function to get filter display text
 const getFilterDisplayText = (
-  direction: DirectionType, 
+  direction: DirectionType,
   hasDateFilter: boolean
 ) => {
   if (direction !== 'all' || hasDateFilter) {
@@ -80,7 +81,7 @@ const getFilterDisplayText = (
 
 export default function AccountPage() {
   const searchParams = useSearchParams();
-  
+
   // Initialize state from URL params
   const [transactions, setTransactions] = useState<TransactionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,9 +91,11 @@ export default function AccountPage() {
   const [currentFilter, setCurrentFilter] = useState<FilterType>(
     (searchParams.get('filter') as FilterType) || 'all'
   );
-  
+
   // Advanced filtering state
   const [showFilterModal, setShowFilterModal] = useState(false);
+
+  // Current applied filters
   const [direction, setDirection] = useState<DirectionType>(
     (searchParams.get('direction') as DirectionType) || 'all'
   );
@@ -105,20 +108,36 @@ export default function AccountPage() {
   const [endDate, setEndDate] = useState<string>(
     searchParams.get('endDate') || ''
   );
-  
+
+  // Temporary filter state (for the modal)
+  const [tempDirection, setTempDirection] = useState<DirectionType>(direction);
+  const [tempSort, setTempSort] = useState<SortType>(sort);
+  const [tempStartDate, setTempStartDate] = useState<string>(startDate);
+  const [tempEndDate, setTempEndDate] = useState<string>(endDate);
+
+  // Set temp filters when opening modal
+  useEffect(() => {
+    if (showFilterModal) {
+      setTempDirection(direction);
+      setTempSort(sort);
+      setTempStartDate(startDate);
+      setTempEndDate(endDate);
+    }
+  }, [showFilterModal, direction, sort, startDate, endDate]);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const limit = 5; // Changed from 10 to 5 transactions per page
-  
+
   // Reference to the observer element
   const observer = useRef<IntersectionObserver | null>(null);
   const lastTransactionElementRef = useCallback((node: HTMLDivElement) => {
     if (isLoadingMore) return;
-    
+
     // Disconnect previous observer
     if (observer.current) observer.current.disconnect();
-    
+
     // Create new observer
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
@@ -130,89 +149,101 @@ export default function AccountPage() {
       rootMargin: '100px', // Load more when 100px from the bottom
       threshold: 0.1
     });
-    
+
     if (node) observer.current.observe(node);
   }, [isLoadingMore, hasMore, currentPage]);
-  
+
   // TODO: Get user address from authentication context/store
   // For now using a static address for demo purposes
   const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
-  
+
   // Build query parameters for API request
   const buildQueryParams = (page: number) => {
     const params = new URLSearchParams();
-    
+
     // Pagination
     params.append('page', page.toString());
     params.append('limit', limit.toString());
-    
+
     // Filtering
     if (direction !== 'all') {
       params.append('filterBy', direction);
     }
-    
+
     // Sorting
     params.append('sort', sort);
-    
+
     // Date range - using just YYYY-MM-DD format
     if (startDate) {
       params.append('startDate', startDate); // Just pass the YYYY-MM-DD string
     }
-    
+
     if (endDate) {
       params.append('endDate', endDate); // Just pass the YYYY-MM-DD string
     }
-    
+
     return params.toString();
   };
-  
+
   // Load additional transactions
   const loadMoreTransactions = useCallback(() => {
     if (!hasMore || isLoadingMore) return;
-    
+
     setIsLoadingMore(true);
-    
+
     // Increment the page number
     const nextPage = currentPage + 1;
     console.log(`Loading page ${nextPage} with limit ${limit}`);
     setCurrentPage(nextPage);
   }, [hasMore, isLoadingMore, currentPage, limit]);
-  
+
   // Update URL with current filters
   const updateUrlParams = useCallback(() => {
     const params = new URLSearchParams();
-    
+
     if (currentFilter !== 'all') {
       params.append('filter', currentFilter);
     }
-    
+
     if (direction !== 'all') {
       params.append('direction', direction);
     }
-    
+
     if (sort !== 'desc') {
       params.append('sort', sort);
     }
-    
+
     if (startDate) {
       params.append('startDate', startDate);
     }
-    
+
     if (endDate) {
       params.append('endDate', endDate);
     }
-    
+
     // Create URL string
     const queryString = params.toString();
     const url = queryString ? `?${queryString}` : '';
-    
+
     // Update the URL without reloading the page
     window.history.replaceState({}, '', `${window.location.pathname}${url}`);
   }, [currentFilter, direction, sort, startDate, endDate]);
-  
+
   // Handle applying filters
   const applyFilters = () => {
-    console.log('Applying filters:', { direction, sort, startDate, endDate });
+    // Apply temporary filters to the actual filter state
+    setDirection(tempDirection);
+    setSort(tempSort);
+    setStartDate(tempStartDate);
+    setEndDate(tempEndDate);
+    
+    console.log('Applying filters:', { 
+      direction: tempDirection, 
+      sort: tempSort, 
+      startDate: tempStartDate, 
+      endDate: tempEndDate 
+    });
+    
     // Reset pagination and transactions when filters change
     setTransactions([]);
     setCurrentPage(1);
@@ -221,7 +252,7 @@ export default function AccountPage() {
     // Update URL with new filters
     updateUrlParams();
   };
-  
+
   // Reset all filters
   const resetFilters = () => {
     setDirection('all');
@@ -232,62 +263,62 @@ export default function AccountPage() {
     setTransactions([]);
     setCurrentPage(1);
     setShowFilterModal(false);
-    
+
     // Clear URL params
     window.history.replaceState({}, '', window.location.pathname);
   };
-  
+
   // Compute the filter display text and active state
   const hasDateFilter = !!(startDate || endDate);
-  const hasActiveFilters = direction !== 'all' || hasDateFilter; 
+  const hasActiveFilters = direction !== 'all' || hasDateFilter;
   const filterDisplayText = getFilterDisplayText(direction, hasDateFilter);
-  
+
   // Fetch transactions from the API
   useEffect(() => {
     const fetchTransactions = async () => {
       const isInitialLoad = currentPage === 1;
-      
+
       if (isInitialLoad) {
         setIsLoading(true);
       } else {
         console.log(`Fetching page ${currentPage} with limit ${limit}`);
       }
-      
+
       setError(null);
-      
+
       try {
         const queryParams = buildQueryParams(currentPage);
         console.log(`API request: ${queryParams}`);
         const response = await fetch(`https://zap-service-jkce.onrender.com/api/transactions/${userAddress}?${queryParams}`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch transactions: ${response.status}`);
         }
-        
+
         const data: ApiResponse = await response.json();
-        
+
         if (!data.success) {
           throw new Error(data.error || 'Failed to fetch transactions');
         }
-        
+
         // Set hasMore flag based on API response
         setHasMore(data.pagination.hasMore);
-        
+
         if (isInitialLoad) {
           // Calculate balance from total received minus total sent
           const totalReceived = parseFloat(data.summary.totalReceived || '0');
           const totalSent = parseFloat(data.summary.totalSent || '0');
           const currentBalance = totalReceived - totalSent;
-          
+
           // Format balance with commas
           setBalance(currentBalance.toLocaleString('id-ID'));
         }
-        
+
         // Transform API transactions to our component format
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
           // Determine if this transaction is sent or received
           const isSent = tx.from.toLowerCase() === userAddress.toLowerCase();
-          
+
           return {
             id: tx.hash,
             txAddress: isSent ? tx.to : tx.from,
@@ -297,7 +328,7 @@ export default function AccountPage() {
             date: tx.formattedDate || new Date(Number(tx.timestamp) * 1000).toLocaleDateString()
           };
         });
-        
+
         // Append new transactions to existing ones if loading more
         if (isInitialLoad) {
           setTransactions(mappedTransactions);
@@ -315,19 +346,11 @@ export default function AccountPage() {
 
     fetchTransactions();
   }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit]);
-  
+
   // Filter transactions based on selected type
   const filteredTransactions = currentFilter === 'all'
     ? transactions
     : transactions.filter(tx => tx.type === currentFilter);
-
-  // Effect to update URL when filters change
-  useEffect(() => {
-    // Don't update on initial render
-    if (!isLoading) {
-      updateUrlParams();
-    }
-  }, [direction, sort, startDate, endDate, currentFilter, updateUrlParams, isLoading]);
 
   return (
     <MobileLayout title="My Account" showAvatar>
@@ -335,10 +358,13 @@ export default function AccountPage() {
         <div className="account-balance-card">
           <h3 className="balance-label">Total Balance</h3>
           <div className="balance-amount">
-            {isLoading && currentPage === 1 ? 'Loading...' : `Rp ${balance}`}
+            {isLoading && currentPage === 1 ?
+              <div className="shimmer" style={{ height: '36px', width: '180px' }}></div> :
+              `Rp ${balance}`
+            }
           </div>
           <div className="balance-currency">IDRX</div>
-          
+
           <div className="quick-actions">
             <Button variant="primary" size="small" fullWidth={false} className="action-button">
               <FiArrowUpRight /> <span>Send</span>
@@ -352,39 +378,32 @@ export default function AccountPage() {
         <div className="transactions-section">
           <div className="section-header">
             <h3 className="section-title">Transaction History</h3>
-            
+
             <div className="filter-actions">
-              <div 
+              <div
                 className={`filter-dropdown ${hasActiveFilters ? 'active' : ''}`}
                 onClick={() => setShowFilterModal(true)}
               >
                 <FiFilter />
                 <span>{filterDisplayText}</span>
               </div>
-              
-              <button 
-                className="search-button" 
-                onClick={() => setShowFilterModal(true)}
-                aria-expanded={showFilterModal}
-              >
-                <FiSearch />
-              </button>
+
             </div>
           </div>
-          
+
           {/* Filter Modal */}
-          <Modal 
-            isOpen={showFilterModal} 
-            onClose={() => setShowFilterModal(false)} 
+          <Modal
+            isOpen={showFilterModal}
+            onClose={() => setShowFilterModal(false)}
             title="Filter Transactions"
           >
             <div className="filter-content">
               <div className="filter-group">
                 <label>Direction</label>
                 <div className="custom-select">
-                  <select 
-                    value={direction}
-                    onChange={(e) => setDirection(e.target.value as DirectionType)}
+                  <select
+                    value={tempDirection}
+                    onChange={(e) => setTempDirection(e.target.value as DirectionType)}
                     className="filter-select"
                   >
                     <option value="all">All</option>
@@ -393,13 +412,13 @@ export default function AccountPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>Sort</label>
                 <div className="custom-select">
-                  <select 
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value as SortType)}
+                  <select
+                    value={tempSort}
+                    onChange={(e) => setTempSort(e.target.value as SortType)}
                     className="filter-select"
                   >
                     <option value="desc">Newest First</option>
@@ -407,46 +426,46 @@ export default function AccountPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>From Date</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input 
-                    type="date" 
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                  <input
+                    type="date"
+                    value={tempStartDate}
+                    onChange={(e) => setTempStartDate(e.target.value)}
                     className="date-input"
                   />
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>To Date</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input 
-                    type="date" 
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                  <input
+                    type="date"
+                    value={tempEndDate}
+                    onChange={(e) => setTempEndDate(e.target.value)}
                     className="date-input"
                   />
                 </div>
               </div>
-              
+
               <div className="filter-button-row">
-                <Button 
-                  variant="outline" 
-                  size="small" 
+                <Button
+                  variant="outline"
+                  size="small"
                   onClick={resetFilters}
                   className="reset-button"
                   fullWidth
                 >
                   Reset
                 </Button>
-                <Button 
-                  variant="primary" 
-                  size="small" 
+                <Button
+                  variant="primary"
+                  size="small"
                   onClick={applyFilters}
                   className="apply-button"
                   fullWidth
@@ -459,9 +478,7 @@ export default function AccountPage() {
 
           <div className="transactions-list">
             {isLoading && currentPage === 1 ? (
-              <div className="loading-transactions">
-                <p>Loading transactions...</p>
-              </div>
+              <TransactionSkeleton count={5} />
             ) : error ? (
               <div className="error-transactions">
                 <p>{error}</p>
@@ -469,11 +486,11 @@ export default function AccountPage() {
             ) : filteredTransactions.length > 0 ? (
               <>
                 {filteredTransactions.map((tx, index) => (
-                  <div 
-                    key={tx.id} 
+                  <div
+                    key={tx.id}
                     ref={
-                      index === filteredTransactions.length - 1 
-                        ? lastTransactionElementRef 
+                      index === filteredTransactions.length - 1
+                        ? lastTransactionElementRef
                         : undefined
                     }
                   >
@@ -487,14 +504,13 @@ export default function AccountPage() {
                     />
                   </div>
                 ))}
-                
+
                 {isLoadingMore && (
-                  <div className="loading-more">
-                    <div className="loading-spinner"></div>
-              
+                  <div className="loading-more-container">
+                    <TransactionSkeleton count={1} />
                   </div>
                 )}
-                
+
 
               </>
             ) : (
