@@ -10,7 +10,7 @@ interface TransactionProps {
   amount: string | number;
   type?: 'sent' | 'received';
   date?: string;
-  id?: string; // Added ID for navigation
+  id?: string;
 }
 
 export const Transaction: React.FC<TransactionProps> = ({
@@ -23,21 +23,16 @@ export const Transaction: React.FC<TransactionProps> = ({
 }) => {
   const router = useRouter();
   const isReceived = type === 'received';
-  
-  // Truncate Ethereum address to format: 0x123...ABC
   const truncateAddress = (address: string) => {
     if (!address || address.length < 10) return address;
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
-  
-  // Format date and time from ISO string or timestamp
+
   const formatDateTime = (dateString?: string) => {
     if (!dateString) return '';
-    
+
     try {
       const date = new Date(dateString);
-      
-      // Format: DD/MM/YYYY HH:MM
       return date.toLocaleString('en-GB', {
         day: '2-digit',
         month: '2-digit',
@@ -47,20 +42,18 @@ export const Transaction: React.FC<TransactionProps> = ({
         hour12: false
       });
     } catch {
-      // Return the original string if date parsing fails
       return dateString;
     }
   };
-  
-  // Handle click to navigate to transaction details
+
   const handleClick = () => {
     if (id) {
       router.push(`/transaction/${id}`);
     }
   };
-  
+
   return (
-    <div 
+    <div
       className={`transaction-item ${isReceived ? 'transaction-item--received' : 'transaction-item--sent'}`}
       onClick={handleClick}
       style={{ cursor: id ? 'pointer' : 'default' }}
@@ -76,7 +69,7 @@ export const Transaction: React.FC<TransactionProps> = ({
           </div>
         )}
       </div>
-      
+
       <div className="transaction-item__details">
         <div className="transaction-item__main">
           <div className="transaction-item__address">
@@ -84,7 +77,7 @@ export const Transaction: React.FC<TransactionProps> = ({
           </div>
           {date && <div className="transaction-item__date">{formatDateTime(date)}</div>}
         </div>
-        
+
         <div className="transaction-item__info">
           <div className="transaction-item__token">
             <span className="value">{token}</span>

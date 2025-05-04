@@ -19,20 +19,18 @@ export const Modal: React.FC<ModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Prevent body scrolling when modal is open
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
 
-    // Cleanup
+   
     return () => {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
 
-  // Close when clicking outside
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
       onClose();

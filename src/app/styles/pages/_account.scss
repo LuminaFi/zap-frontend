@@ -244,7 +244,6 @@
   color: var(--text-light);
   font-size: 16px;
   
-  /* Styling the native date input */
   position: relative;
   appearance: none;
   
@@ -411,7 +410,6 @@
   }
 }
 
-// Pagination indicator
 .pagination-info {
   display: flex;
   justify-content: center;
@@ -451,7 +449,6 @@
   }
 }
 
-/* Light Mode Overrides */
 [data-theme="light"] {
   .transactions-section {
     background-color: var(--surface-color);
@@ -533,7 +530,6 @@
   }
 }
 
-/* Dark Mode Styles */
 [data-theme="dark"] {
   .account-balance-card {
     background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-dark-dark));
@@ -576,7 +572,6 @@
   }
 }
 
-// Shimmer loading effect
 .shimmer {
   position: relative;
   background: #252a37;
@@ -602,7 +597,6 @@
   }
 }
 
-// Transaction skeleton
 .transaction-skeleton {
   padding: 16px;
   margin-bottom: 10px;

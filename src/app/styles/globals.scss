@@ -36,7 +36,6 @@
   --shadow-color-dark: rgba(0, 0, 0, 0.3); /* Dark shadow */
 }
 
-/* Apply dark mode variables when data-theme="dark" is set */
 [data-theme="dark"] {
   --primary-color: var(--primary-color-dark);
   --primary-light: var(--primary-light-dark);

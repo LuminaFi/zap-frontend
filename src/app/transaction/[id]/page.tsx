@@ -6,7 +6,6 @@ import { MobileLayout } from '../../components/MobileLayout';
 import { FiArrowLeft, FiArrowUpRight, FiArrowDownLeft, FiExternalLink } from 'react-icons/fi';
 import { Button } from '../../components/Button';
 
-// Types for transaction details
 interface TransactionDetails {
   hash: string;
   from: string;
@@ -29,7 +28,6 @@ export default function TransactionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Placeholder user address - in a real app, get this from auth context
   const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
   
   useEffect(() => {
@@ -40,7 +38,6 @@ export default function TransactionDetailPage() {
       setError(null);
       
       try {
-        // Use the direct endpoint to fetch a single transaction by its hash
         const response = await fetch(`https://zap-service-jkce.onrender.com/api/transaction/${params.id}`);
         
         if (!response.ok) {
@@ -53,7 +50,6 @@ export default function TransactionDetailPage() {
           throw new Error(data.error || 'Failed to fetch transaction');
         }
         
-        // Use the transaction directly from the response
         setTransaction(data.transaction);
       } catch (err) {
         console.error('Error fetching transaction details:', err);
@@ -66,7 +62,6 @@ export default function TransactionDetailPage() {
     fetchTransactionDetails();
   }, [params.id]);
   
-  // Format date and time from ISO string or timestamp
   const formatDateTime = (dateString?: string | number) => {
     if (!dateString) return '';
     
@@ -89,13 +84,11 @@ export default function TransactionDetailPage() {
     }
   };
   
-  // Truncate Ethereum address for display
   const truncateAddress = (address: string) => {
     if (!address || address.length < 10) return address;
     return `${address.substring(0, 10)}...${address.substring(address.length - 8)}`;
   };
   
-  // Determine if transaction is sent or received
   const isSent = transaction?.from?.toLowerCase() === userAddress.toLowerCase();
     const handleBack = () => {
     router.back();

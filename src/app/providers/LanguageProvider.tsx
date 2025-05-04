@@ -2,27 +2,22 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Supported languages
 export type Language = 'en' | 'id';
 
-// Context type
 type LanguageContextType = {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
 };
 
-// Default context
 const defaultContext: LanguageContextType = {
   language: 'en',
   setLanguage: () => { },
   t: (key: string) => key,
 };
 
-// Create context
 const LanguageContext = createContext<LanguageContextType>(defaultContext);
 
-// English translations
 const en = {
   // General
   'app.name': 'IDRX Banking',
@@ -86,7 +81,6 @@ const en = {
   'send.title': 'Send',
 };
 
-// Indonesian translations
 const id = {
   // General
   'app.name': 'IDRX Banking',
@@ -150,7 +144,6 @@ const id = {
   'send.title': 'Kirim',
 };
 
-// Translations object
 const translations = { en, id };
 
 interface LanguageProviderProps {
@@ -158,24 +151,20 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  // Initialize from localStorage if available, otherwise default to 'en'
   const [language, setLanguageState] = useState<Language>('en');
 
-  // Load language preference from localStorage on mount
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') as Language;
     if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'id')) {
       setLanguageState(savedLanguage);
     }
   }, []);
-
-  // Update language and save to localStorage
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('language', lang);
   };
 
-  // Translation function
+
   const t = (key: string) => {
     return translations[language][key as keyof typeof translations[typeof language]] || key;
   };
@@ -193,5 +182,4 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   );
 };
 
-// Custom hook for using translations
 export const useLanguage = () => useContext(LanguageContext); 

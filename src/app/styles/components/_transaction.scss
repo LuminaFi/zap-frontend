@@ -135,7 +135,6 @@
   }
 }
 
-/* Filter button style */
 .account-filter {
   display: inline-flex;
   align-items: center;
@@ -170,7 +169,6 @@
   }
 }
 
-/* Light Mode Styles */
 [data-theme="light"] {
   .transaction-item {
     background-color: var(--surface-color);
@@ -236,7 +234,6 @@
   }
 }
 
-/* Dark Mode Styles */
 [data-theme="dark"] {
   .transaction-item {
     background-color: var(--surface-dark);

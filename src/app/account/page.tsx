@@ -10,7 +10,6 @@ import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw } fr
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '../providers/LanguageProvider';
 
-// Types for the transaction data from API
 interface ApiTransaction {
   id: string;
   hash: string;
@@ -30,7 +29,6 @@ interface ApiTransaction {
   token: string;
 }
 
-// Types for our component
 interface TransactionData {
   id: string;
   txAddress: string;
@@ -40,7 +38,6 @@ interface TransactionData {
   date: string;
 }
 
-// Type for API response
 interface ApiResponse {
   success: boolean;
   address: string;
@@ -62,12 +59,10 @@ interface ApiResponse {
   error?: string;
 }
 
-// Filter types
 type FilterType = 'all' | 'sent' | 'received';
 type DirectionType = 'all' | 'from' | 'to';
 type SortType = 'asc' | 'desc';
 
-// Helper function to get filter display text
 const getFilterDisplayText = (
   direction: DirectionType,
   hasDateFilter: boolean
@@ -84,7 +79,6 @@ export default function AccountPage() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
 
-  // Initialize state from URL params
   const [transactions, setTransactions] = useState<TransactionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -95,10 +89,8 @@ export default function AccountPage() {
     (searchParams.get('filter') as FilterType) || 'all'
   );
 
-  // Advanced filtering state
   const [showFilterModal, setShowFilterModal] = useState(false);
 
-  // Current applied filters
   const [direction, setDirection] = useState<DirectionType>(
     (searchParams.get('direction') as DirectionType) || 'all'
   );
@@ -112,13 +104,11 @@ export default function AccountPage() {
     searchParams.get('endDate') || ''
   );
 
-  // Temporary filter state (for the modal)
   const [tempDirection, setTempDirection] = useState<DirectionType>(direction);
   const [tempSort, setTempSort] = useState<SortType>(sort);
   const [tempStartDate, setTempStartDate] = useState<string>(startDate);
   const [tempEndDate, setTempEndDate] = useState<string>(endDate);
 
-  // Set temp filters when opening modal
   useEffect(() => {
     if (showFilterModal) {
       setTempDirection(direction);
@@ -128,79 +118,63 @@ export default function AccountPage() {
     }
   }, [showFilterModal, direction, sort, startDate, endDate]);
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const limit = 5; // Changed from 10 to 5 transactions per page
+  const limit = 5;
 
-  // Reference to the observer element
   const observer = useRef<IntersectionObserver | null>(null);
   const lastTransactionElementRef = useCallback((node: HTMLDivElement) => {
     if (isLoadingMore) return;
 
-    // Disconnect previous observer
     if (observer.current) observer.current.disconnect();
 
-    // Create new observer
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
-        console.log('Loading more transactions, current page:', currentPage);
         loadMoreTransactions();
       }
     }, {
       root: null,
-      rootMargin: '100px', // Load more when 100px from the bottom
+      rootMargin: '100px',
       threshold: 0.1
     });
 
     if (node) observer.current.observe(node);
   }, [isLoadingMore, hasMore, currentPage]);
 
-  // TODO: Get user address from authentication context/store
-  // For now using a static address for demo purposes
   const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
 
-  // Build query parameters for API request
   const buildQueryParams = (page: number) => {
     const params = new URLSearchParams();
 
-    // Pagination
     params.append('page', page.toString());
     params.append('limit', limit.toString());
 
-    // Filtering
     if (direction !== 'all') {
       params.append('filterBy', direction);
     }
 
-    // Sorting
     params.append('sort', sort);
 
-    // Date range - using just YYYY-MM-DD format
     if (startDate) {
-      params.append('startDate', startDate); // Just pass the YYYY-MM-DD string
+      params.append('startDate', startDate);
     }
 
     if (endDate) {
-      params.append('endDate', endDate); // Just pass the YYYY-MM-DD string
+      params.append('endDate', endDate);
     }
 
     return params.toString();
   };
 
-  // Load additional transactions
   const loadMoreTransactions = useCallback(() => {
     if (!hasMore || isLoadingMore) return;
 
     setIsLoadingMore(true);
 
-    // Increment the page number
     const nextPage = currentPage + 1;
-    console.log(`Loading page ${nextPage} with limit ${limit}`);
     setCurrentPage(nextPage);
   }, [hasMore, isLoadingMore, currentPage, limit]);
 
-  // Update URL with current filters
   const updateUrlParams = useCallback(() => {
     const params = new URLSearchParams();
 
@@ -224,39 +198,25 @@ export default function AccountPage() {
       params.append('endDate', endDate);
     }
 
-    // Create URL string
     const queryString = params.toString();
     const url = queryString ? `?${queryString}` : '';
 
-    // Update the URL without reloading the page
     window.history.replaceState({}, '', `${window.location.pathname}${url}`);
   }, [currentFilter, direction, sort, startDate, endDate]);
 
-  // Handle applying filters
   const applyFilters = () => {
-    // Apply temporary filters to the actual filter state
     setDirection(tempDirection);
     setSort(tempSort);
     setStartDate(tempStartDate);
     setEndDate(tempEndDate);
     
-    console.log('Applying filters:', { 
-      direction: tempDirection, 
-      sort: tempSort, 
-      startDate: tempStartDate, 
-      endDate: tempEndDate 
-    });
-    
-    // Reset pagination and transactions when filters change
     setTransactions([]);
     setCurrentPage(1);
     setShowFilterModal(false);
     
-    // Update URL with new filters
     updateUrlParams();
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setDirection('all');
     setSort('desc');
@@ -267,60 +227,45 @@ export default function AccountPage() {
     setCurrentPage(1);
     setShowFilterModal(false);
 
-    // Clear URL params
     window.history.replaceState({}, '', window.location.pathname);
   };
 
-  // Compute the filter display text and active state
   const hasDateFilter = !!(startDate || endDate);
   const hasActiveFilters = direction !== 'all' || hasDateFilter;
   const filterDisplayText = getFilterDisplayText(direction, hasDateFilter);
 
-  // Calculate today's date in YYYY-MM-DD format for max attribute
   const today = new Date().toISOString().split('T')[0];
 
-  // Add isRefreshing state
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Add a refreshTrigger state to force effects to run again
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Refresh function to reload both balance and transaction data
   const handleRefreshData = () => {
-    console.log('REFRESH BUTTON CLICKED');
     setIsRefreshing(true);
     
-    // Reset data states
     setTransactions([]);
     setCurrentPage(1);
     setError(null);
     
-    // Increment trigger to force both effects to re-run
     setRefreshTrigger(prev => prev + 1);
     
-    // Turn off refreshing after a delay to show animation
     setTimeout(() => {
       setIsRefreshing(false);
-      console.log('Refresh animation completed');
     }, 800);
   };
 
-  // Fetch transactions from the API
   useEffect(() => {
     const fetchTransactions = async () => {
       const isInitialLoad = currentPage === 1;
 
       if (isInitialLoad) {
         setIsLoading(true);
-      } else {
-        console.log(`Fetching page ${currentPage} with limit ${limit}`);
       }
 
       setError(null);
 
       try {
         const queryParams = buildQueryParams(currentPage);
-        console.log(`API request: ${queryParams}`);
         const response = await fetch(`https://zap-service-jkce.onrender.com/api/transactions/${userAddress}?${queryParams}`);
 
         if (!response.ok) {
@@ -333,12 +278,9 @@ export default function AccountPage() {
           throw new Error(data.error || 'Failed to fetch transactions');
         }
 
-        // Set hasMore flag based on API response
         setHasMore(data.pagination.hasMore);
 
-        // Transform API transactions to our component format
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
-          // Determine if this transaction is sent or received
           const isSent = tx.from.toLowerCase() === userAddress.toLowerCase();
 
           return {
@@ -351,7 +293,6 @@ export default function AccountPage() {
           };
         });
 
-        // Append new transactions to existing ones if loading more
         if (isInitialLoad) {
           setTransactions(mappedTransactions);
         } else {
@@ -369,13 +310,12 @@ export default function AccountPage() {
     fetchTransactions();
   }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger]);
 
-  // Fetch the balance
   useEffect(() => {
     const fetchBalance = async () => {
       setIsBalanceLoading(true);
       
       try {
-        const response = await fetch(`https://zap-service-jkce.onrender.com/idrx-balance/${userAddress}`);
+        const response = await fetch(`https://zap-service-jkce.onrender.com/api/idrx-balance/${userAddress}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch balance: ${response.status}`);
@@ -384,7 +324,6 @@ export default function AccountPage() {
         const data = await response.json();
         
         if (data.success) {
-          // Use the exactly formatted balance from API
           setBalance(data.idrBalanceFormatted || 'Rp 0');
         } else {
           console.error('Failed to fetch balance:', data.error);
@@ -401,14 +340,11 @@ export default function AccountPage() {
     fetchBalance();
   }, [userAddress, refreshTrigger]);
 
-  // Filter transactions based on selected type
   const filteredTransactions = currentFilter === 'all'
     ? transactions
     : transactions.filter(tx => tx.type === currentFilter);
 
-  // Debug message to check component mounts
   useEffect(() => {
-    console.log('Account page mounted');
   }, []);
 
   return (
@@ -471,7 +407,6 @@ export default function AccountPage() {
             </div>
           </div>
           
-          {/* Filter Modal */}
           <Modal 
             isOpen={showFilterModal} 
             onClose={() => setShowFilterModal(false)} 
@@ -605,4 +540,4 @@ export default function AccountPage() {
       </div>
     </MobileLayout>
   );
-} 
+}
