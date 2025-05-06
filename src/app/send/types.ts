@@ -52,3 +52,16 @@ export interface calculateAmountResponse {
   idrxAmountFormatted: string;
   fees: TransferFee;
 }
+
+export type TransferIDRXPayload = {
+  recipientAddress: AddressType;
+  idrxAmount: number;
+};
+
+export type TransferIDRXResponse = {
+  success: boolean;
+  transferId: string;
+  recipient: string;
+  amount: string;
+  transactionHash: string;
+};
