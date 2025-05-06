@@ -79,6 +79,7 @@ const en = {
   'send.enterAmount': 'Enter Amount',
   'send.sendButton': 'Send',
   'send.title': 'Send',
+  'send.idrxPrefix': 'IDRX',
 };
 
 const id = {
