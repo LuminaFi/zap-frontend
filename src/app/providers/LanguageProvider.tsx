@@ -80,6 +80,9 @@ const en = {
   'send.sendButton': 'Send',
   'send.title': 'Send',
   'send.idrxPrefix': 'IDRX',
+  'send.network': 'Network',
+  'send.token': 'Token',
+  'send.selectToken': 'Select Token',
 };
 
 const id = {
@@ -143,6 +146,9 @@ const id = {
   'send.enterAmount': 'Masukkan Jumlah',
   'send.sendButton': 'Kirim',
   'send.title': 'Kirim',
+  'send.network': 'Jaringan',
+  'send.token': 'Token',
+  'send.selectToken': 'Pilih Token',
 };
 
 const translations = { en, id };
