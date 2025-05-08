@@ -44,13 +44,27 @@
 }
 
 .balance-amount {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 700;
   margin-bottom: 4px;
+  line-height: 1.2;
+  word-break: break-word;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+  &.large-number {
+    font-size: 24px;
+  }
+  
+  &.very-large-number {
+    font-size: 20px;
+  }
 }
 
 .balance-currency {
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 500;
   opacity: 0.8;
   margin-bottom: 20px;
 }
