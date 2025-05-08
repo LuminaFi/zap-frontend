@@ -190,8 +190,6 @@ body {
     opacity: 1;
   }
 }
-
-/* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .transfer-limits-container {
     border-color: rgba(255, 255, 255, 0.1);

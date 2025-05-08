@@ -41,7 +41,6 @@ export default function ProfilePage() {
     const { name, value } = e.target;
     
     if (name === 'amount') {
-      // Format amount with commas
       const numericValue = value.replace(/[^\d]/g, '');
       if (numericValue === '') {
         setFormattedAmount('');
@@ -50,7 +49,6 @@ export default function ProfilePage() {
           amount: ''
         });
       } else {
-        // Format with commas
         const formatted = new Intl.NumberFormat('en-US').format(parseInt(numericValue));
         setFormattedAmount(formatted);
         setWithdrawForm({
@@ -68,10 +66,10 @@ export default function ProfilePage() {
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would handle the withdrawal process
+  
     console.log('Withdraw request:', withdrawForm);
     
-    // For demo purposes, just close the modal and show a success message
+   
     alert('Withdrawal request submitted successfully!');
     closeWithdrawModal();
   }
