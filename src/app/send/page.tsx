@@ -8,8 +8,9 @@ import {
   type BaseError,
   useSendTransaction,
   useWaitForTransactionReceipt,
+  useWriteContract,
 } from "wagmi";
-import { parseEther } from "viem";
+import { erc20Abi, parseEther, parseUnits } from "viem";
 import { DefaultError, useMutation, useQuery } from "@tanstack/react-query";
 import type {
   AddressType,
@@ -198,12 +199,13 @@ export default function SendPage() {
   
   const [isCopied, setIsCopied] = useState(false);
 
-  const { data: hash, error, sendTransaction } = useSendTransaction();
+  const { data: ethHash, error: ethError, sendTransaction } = useSendTransaction();
+  const { data: tokenHash, error: tokenError, writeContract} = useWriteContract();
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
     isError: isErrorTrf,
-  } = useWaitForTransactionReceipt({ hash });
+  } = useWaitForTransactionReceipt({ hash: selectedToken?.id === "ethereum" ? ethHash : tokenHash });
   const { mutate: transferIDRX, isPending: isLoadingTrf } = useMutation<
     TransferIDRXResponse,
     DefaultError,
@@ -348,12 +350,22 @@ export default function SendPage() {
 
     calculateAmount(sendData.amount!)
       .then((amount) => {
-        sendTransaction({
-          to: `${ETHEREUM_ADDRESS}` as AddressType,
-          value: parseEther(amount),
-        });
+        if (selectedToken?.id === "ethereum") {
+          return sendTransaction({
+            to: `${selectedToken.addresses.testnet}` as AddressType,
+            value: parseEther(amount),
+          });
+        }
 
-        console.log("Transaction sent:", hash);
+        return writeContract({
+          address: '0x2728DD8B45B788e26d12B13Db5A244e5403e7eda', // smart contract address, probably need to be changed since this can only handle usdt
+          abi: erc20Abi,
+          functionName: "transfer",
+          args: [
+            `${selectedToken?.addresses.testnet}` as AddressType,
+            parseUnits(amount, 6), // hardcoded for now, i think we need to get the decimals for each token from backend
+          ],
+        });
       })
       .catch((error) => {
         console.error("Error sending transaction:", error);
@@ -907,9 +919,15 @@ export default function SendPage() {
               </>
             )}
 
-            {error && (
+            {ethError && (
               <div className={`error-message ${theme}`}>
-                {(error as BaseError).shortMessage || error.message}
+                {(ethError as BaseError).shortMessage || ethError.message}
+              </div>
+            )}
+
+            {tokenError && (
+              <div className={`error-message ${theme}`}>
+                {(tokenError as BaseError).shortMessage || tokenError.message}
               </div>
             )}
 
