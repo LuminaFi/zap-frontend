@@ -201,6 +201,8 @@ export default function SendPage() {
 
   const { data: ethHash, error: ethError, sendTransaction } = useSendTransaction();
   const { data: tokenHash, error: tokenError, writeContract} = useWriteContract();
+  const activeError = selectedToken?.id === "ethereum" ? ethError : tokenError;
+
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
@@ -363,7 +365,7 @@ export default function SendPage() {
           functionName: "transfer",
           args: [
             `${selectedToken?.addresses.testnet}` as AddressType,
-            parseUnits(amount, 6), // hardcoded for now, i think we need to get the decimals for each token from backend
+            parseUnits(amount, 6), // hardcoded for now, probably need to get the decimals for each token from backend
           ],
         });
       })
@@ -919,15 +921,9 @@ export default function SendPage() {
               </>
             )}
 
-            {ethError && (
+            {activeError && (
               <div className={`error-message ${theme}`}>
-                {(ethError as BaseError).shortMessage || ethError.message}
-              </div>
-            )}
-
-            {tokenError && (
-              <div className={`error-message ${theme}`}>
-                {(tokenError as BaseError).shortMessage || tokenError.message}
+                {(activeError as BaseError).shortMessage || activeError.message}
               </div>
             )}
 
