@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { XellarKitProvider, defaultConfig, lightTheme } from "@xellar/kit";
 import { liskSepolia } from "viem/chains";
 
-const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!;
-const xellarAppId = process.env.NEXT_PUBLIC_XELLAR_APP_ID;
+const walletConnectProjectId = "ea054384ce1e0b3b3e78f0cf0891ca6d";
+const xellarAppId = "e205e069-b986-400e-b496-e46dc81993a9";
 
 const config = defaultConfig({
   appName: "Xellar",

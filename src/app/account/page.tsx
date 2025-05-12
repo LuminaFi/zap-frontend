@@ -374,7 +374,11 @@ export default function AccountPage() {
               </button>
             </div>
           </div>
-          <div className="balance-amount">
+          <div className={`balance-amount ${
+            balance.length > 35 ? 'extra-large-number' : 
+            balance.length > 25 ? 'very-large-number' : 
+            balance.length > 15 ? 'large-number' : ''
+          }`}>
             {isBalanceLoading ? 
               <div className="shimmer" style={{ height: '36px', width: '180px' }}></div> :
               `${balance}`

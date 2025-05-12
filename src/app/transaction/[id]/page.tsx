@@ -108,8 +108,23 @@ export default function TransactionDetailPage() {
         </div>
         
         {isLoading ? (
-          <div className="transaction-detail-loading">
-            <p>Loading transaction details...</p>
+          <div className="transaction-detail-content">
+            <div className="shimmer-card" style={{ borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
+              <div className="shimmer" style={{ height: '60px', width: '60px', borderRadius: '50%', margin: '0 auto 12px auto' }}></div>
+              <div className="shimmer" style={{ height: '24px', width: '180px', margin: '0 auto 16px auto' }}></div>
+              <div className="shimmer" style={{ height: '32px', width: '150px', margin: '0 auto 10px auto' }}></div>
+              <div className="shimmer" style={{ height: '16px', width: '120px', margin: '0 auto' }}></div>
+            </div>
+            
+            <div className="shimmer-card" style={{ borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
+              <div className="shimmer" style={{ height: '20px', width: '100%', marginBottom: '16px' }}></div>
+              <div className="shimmer" style={{ height: '20px', width: '100%', marginBottom: '16px' }}></div>
+              <div className="shimmer" style={{ height: '20px', width: '100%', marginBottom: '16px' }}></div>
+              <div className="shimmer" style={{ height: '20px', width: '60%', marginBottom: '16px' }}></div>
+              <div className="shimmer" style={{ height: '20px', width: '80%' }}></div>
+            </div>
+            
+            <div className="shimmer" style={{ height: '48px', width: '100%', borderRadius: '12px' }}></div>
           </div>
         ) : error ? (
           <div className="transaction-detail-error">
