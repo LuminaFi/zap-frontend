@@ -73,6 +73,14 @@ const en = {
   'profile.indonesian': 'Indonesian',
   'profile.security': 'Security',
   'profile.disconnect': 'Disconnect Wallet',
+  'profile.transactions': 'Transactions',
+  'profile.withdrawToBank': 'Withdraw to Bank Account',
+  'profile.bankName': 'Bank Name',
+  'profile.accountNumber': 'Account Number',
+  'profile.accountName': 'Account Holder Name',
+  'profile.amount': 'Amount',
+  'profile.cancel': 'Cancel',
+  'profile.withdraw': 'Withdraw',
 
   'send.recipientAddress': 'Recipient Address',
   'send.amount': 'Amount',
@@ -80,6 +88,9 @@ const en = {
   'send.sendButton': 'Send',
   'send.title': 'Send',
   'send.idrxPrefix': 'IDRX',
+  'send.network': 'Network',
+  'send.token': 'Token',
+  'send.selectToken': 'Select Token',
 };
 
 const id = {
@@ -137,12 +148,23 @@ const id = {
   'profile.indonesian': 'Indonesia',
   'profile.security': 'Keamanan',
   'profile.disconnect': 'Putus Sambungan Wallet',
+  'profile.transactions': 'Transaksi',
+  'profile.withdrawToBank': 'Tarik ke Rekening Bank',
+  'profile.bankName': 'Nama Bank',
+  'profile.accountNumber': 'Nomor Rekening',
+  'profile.accountName': 'Nama Pemilik Rekening',
+  'profile.amount': 'Jumlah',
+  'profile.cancel': 'Batal',
+  'profile.withdraw': 'Tarik',
 
   'send.recipientAddress': 'Alamat Penerima',
   'send.amount': 'Jumlah',
   'send.enterAmount': 'Masukkan Jumlah',
   'send.sendButton': 'Kirim',
   'send.title': 'Kirim',
+  'send.network': 'Jaringan',
+  'send.token': 'Token',
+  'send.selectToken': 'Pilih Token',
 };
 
 const translations = { en, id };

@@ -113,3 +113,110 @@ body {
 .nav-item-placeholder {
   width: 3rem;
 }
+
+/* Transfer Limits Styles */
+.transfer-limits-container {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.transfer-limit-item:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 8px;
+}
+
+/* Address Display Styles */
+.address-display {
+  transition: all 0.2s ease;
+}
+
+.address-display:hover {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.address-display .address-text {
+  font-feature-settings: 'tnum' on, 'lnum' on;
+  letter-spacing: 0.01em;
+}
+
+.address-display button:hover {
+  color: #0066ff !important;
+  opacity: 0.9;
+}
+
+/* Networks Container Styles */
+.networks-container button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Networks Dropdown Styles */
+.networks-dropdown button:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.networks-dropdown-options {
+  animation: fadeIn 0.2s ease;
+}
+
+.network-dropdown-option:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.network-dropdown-option:last-child {
+  border-bottom: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .transfer-limits-container {
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  .transfer-limit-item:not(:last-child) {
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .address-display:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  
+  .address-display button:hover {
+    color: #60a5fa !important;
+  }
+  
+  .networks-container button:hover {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  }
+  
+  .networks-dropdown button:hover {
+    border-color: rgba(96, 165, 250, 0.5);
+  }
+  
+  .network-dropdown-option:hover {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+  }
+}
