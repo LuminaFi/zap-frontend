@@ -26,7 +26,7 @@ export default function Home() {
               <div className="lightning-effect"></div>
               <Image 
                 src="/zap-logo.png" 
-                alt="Bank Indonesia Logo" 
+                alt="Zap Logo" 
                 width={120} 
                 height={120}
                 className="zap-logo"
