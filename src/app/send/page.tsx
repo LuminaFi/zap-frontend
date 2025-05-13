@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { MobileLayout } from "../components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BACKEND_URL, ETHEREUM_ADDRESS } from "../util/constant";
+import { BACKEND_URL } from "../util/constant";
 import {
   type BaseError,
   useSendTransaction,
@@ -188,7 +188,7 @@ export default function SendPage() {
 
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
-  const [selectedToken, setSelectedToken] = useState<Token | null>();
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [isTokenDropdownOpen, setIsTokenDropdownOpen] = useState(false);
   const tokenDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -365,7 +365,7 @@ export default function SendPage() {
           functionName: "transfer",
           args: [
             `${selectedToken?.addresses.testnet}` as AddressType,
-            parseUnits(amount, 6), // hardcoded for now, probably need to get the decimals for each token from backend
+            parseUnits(amount, 2), // hardcoded for now, probably need to get the decimals for each token from backend
           ],
         });
       })
