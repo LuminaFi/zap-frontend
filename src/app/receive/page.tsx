@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TransferLimitResponse } from "../send/types";
 import { getTransferLimit } from "../util/getTransferLimit";
 import { formatNumber } from "../util/formatNumber";
+import { useAccount } from 'wagmi';
 
 export default function ReceivePage() {
   const [isDynamic, setIsDynamic] = useState<boolean>(false);
@@ -17,7 +18,8 @@ export default function ReceivePage() {
   const [amount, setAmount] = useState<number>(0);
   const [formattedAmount, setFormattedAmount] = useState("");
   const [isValidAmount, setIsValidAmount] = useState(false);
-  
+
+  const { address } = useAccount();
   const selectedToken = {
     symbol: "IDRX",
   }
@@ -32,12 +34,12 @@ export default function ReceivePage() {
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     const numericValue = value.replace(/\,/g, '');
     const newAmount = numericValue === '' ? undefined : Number(numericValue);
-    
+
     setAmount(newAmount || 0);
-    
+
     // Update the formatted display value
     if (value.includes(".")) {
       setFormattedAmount(value);
@@ -63,7 +65,7 @@ export default function ReceivePage() {
           <div className="qr-container">
             <QRCode
               value={JSON.stringify({
-                address: "0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a",
+                address: address,
               })}
               qrStyle="dots"
               eyeRadius={10}
@@ -87,7 +89,7 @@ export default function ReceivePage() {
             <div className="loading-spinner"
               style={{ alignSelf: "center" }}
             />
-          </div>  
+          </div>
         ) : null}
 
         {isDynamic && !isSubmitted && !isLoadingLimit ? (
@@ -105,11 +107,11 @@ export default function ReceivePage() {
               <TransferLimit transferLimit={limitData} selectedToken={selectedToken} />
             </div>
 
-            <Button 
-            onClick={() => setIsSubmitted(true)}
-            disabled={!isValidAmount}
-            className="send-button"
-            
+            <Button
+              onClick={() => setIsSubmitted(true)}
+              disabled={!isValidAmount}
+              className="send-button"
+
             >Submit</Button>
           </>
         ) : null}
@@ -122,7 +124,7 @@ export default function ReceivePage() {
               <QRCode
                 value={JSON.stringify({
                   amount,
-                  address: "0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a",
+                  address: address,
                 })}
                 qrStyle="dots"
                 eyeRadius={10}

@@ -10,6 +10,7 @@ import { useLanguage } from '../providers/LanguageProvider';
 import { useDisconnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { FiSettings, FiUser, FiShield, FiCreditCard, FiX } from 'react-icons/fi';
+import { useAccount } from 'wagmi';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function ProfilePage() {
     amount: ''
   });
   const [formattedAmount, setFormattedAmount] = useState('');
+  const { address } = useAccount();
 
   const handleRemoveWallet = () => {
     disconnect();
@@ -39,7 +41,7 @@ export default function ProfilePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'amount') {
       const numericValue = value.replace(/[^\d]/g, '');
       if (numericValue === '') {
@@ -66,10 +68,10 @@ export default function ProfilePage() {
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     console.log('Withdraw request:', withdrawForm);
-    
-   
+
+
     alert('Withdrawal request submitted successfully!');
     closeWithdrawModal();
   }
@@ -82,7 +84,7 @@ export default function ProfilePage() {
             <div className="profile-avatar">JK</div>
             <div className="profile-info">
               <h2 className="profile-name">John Kusuma</h2>
-              <p className="profile-wallet">0x123...abc</p>
+              <p className="profile-wallet">{address}</p>
             </div>
           </div>
         </div>
@@ -96,7 +98,7 @@ export default function ProfilePage() {
             label={t('profile.walletAddress') || 'Wallet Address'}
             type="text"
             readOnly
-            value="0x1234567890abcdef1234567890abcdef12345678"
+            value={address}
           />
           <FormField
             label={t('profile.balance') || 'Balance'}
@@ -111,8 +113,8 @@ export default function ProfilePage() {
             <FiCreditCard className="section-icon" />
             {t('profile.transactions') || 'Transactions'}
           </h3>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={openWithdrawModal}
             fullWidth
             style={{ marginBottom: '12px' }}
@@ -134,7 +136,7 @@ export default function ProfilePage() {
             <LanguageToggle />
           </div>
         </div>
-        
+
         <div className="profile-section">
           <h3 className="section-title">
             <FiShield className="section-icon" />
@@ -153,14 +155,14 @@ export default function ProfilePage() {
             <h3 className="modal-title">
               {t('profile.withdrawToBank')}
             </h3>
-            
-            <button 
+
+            <button
               onClick={closeWithdrawModal}
               className="modal-close-button"
             >
               <FiX />
             </button>
-            
+
             <div style={{ padding: '0 20px 20px' }}>
               <form onSubmit={handleWithdraw}>
                 <div style={{ marginBottom: '16px' }}>
@@ -177,7 +179,7 @@ export default function ProfilePage() {
                     placeholder="Enter bank name"
                   />
                 </div>
-                
+
                 <div style={{ marginBottom: '16px' }}>
                   <label className="form-label">
                     {t('profile.accountNumber')}
@@ -192,7 +194,7 @@ export default function ProfilePage() {
                     placeholder="Enter account number"
                   />
                 </div>
-                
+
                 <div style={{ marginBottom: '16px' }}>
                   <label className="form-label">
                     {t('profile.accountName')}
@@ -207,7 +209,7 @@ export default function ProfilePage() {
                     placeholder="Enter account holder name"
                   />
                 </div>
-                
+
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">
                     {t('profile.amount')}
@@ -228,17 +230,17 @@ export default function ProfilePage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="form-actions">
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     variant="secondary"
                     onClick={closeWithdrawModal}
                   >
                     {t('profile.cancel')}
                   </Button>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     variant="primary"
                   >
                     {t('profile.withdraw')}

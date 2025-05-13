@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { MobileLayout } from "../components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BACKEND_URL, ETHEREUM_ADDRESS } from "../util/constant";
+import { BACKEND_URL } from "../util/constant";
 import {
   type BaseError,
   useSendTransaction,
@@ -437,7 +437,7 @@ export default function SendPage() {
     if (sendData.amount) {
       setFormattedAmount(formatNumber(String(sendData.amount)));
     }
-  }, []);
+  }, [sendData.amount]);
 
   return (
     <MobileLayout title={t("send.title") || "Send"} showAvatar>

@@ -9,6 +9,7 @@ import { Modal } from '../components/Modal';
 import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '../providers/LanguageProvider';
+import { useAccount } from 'wagmi';
 
 interface ApiTransaction {
   id: string;
@@ -140,8 +141,7 @@ export default function AccountPage() {
 
     if (node) observer.current.observe(node);
   }, [isLoadingMore, hasMore, currentPage]);
-
-  const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
+  const { address: userAddress } = useAccount();
 
   const buildQueryParams = (page: number) => {
     const params = new URLSearchParams();
@@ -173,7 +173,7 @@ export default function AccountPage() {
 
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-  }, [hasMore, isLoadingMore, currentPage, limit]);
+  }, [hasMore, isLoadingMore, currentPage]);
 
   const updateUrlParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -209,11 +209,11 @@ export default function AccountPage() {
     setSort(tempSort);
     setStartDate(tempStartDate);
     setEndDate(tempEndDate);
-    
+
     setTransactions([]);
     setCurrentPage(1);
     setShowFilterModal(false);
-    
+
     updateUrlParams();
   };
 
@@ -242,13 +242,13 @@ export default function AccountPage() {
 
   const handleRefreshData = () => {
     setIsRefreshing(true);
-    
+
     setTransactions([]);
     setCurrentPage(1);
     setError(null);
-    
+
     setRefreshTrigger(prev => prev + 1);
-    
+
     setTimeout(() => {
       setIsRefreshing(false);
     }, 800);
@@ -308,21 +308,21 @@ export default function AccountPage() {
     };
 
     fetchTransactions();
-  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger]);
+  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger, buildQueryParams]);
 
   useEffect(() => {
     const fetchBalance = async () => {
       setIsBalanceLoading(true);
-      
+
       try {
         const response = await fetch(`https://zap-service-jkce.onrender.com/api/idrx-balance/${userAddress}`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch balance: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
           setBalance(data.idrBalanceFormatted || 'Rp 0');
         } else {
@@ -336,7 +336,7 @@ export default function AccountPage() {
         setIsBalanceLoading(false);
       }
     };
-    
+
     fetchBalance();
   }, [userAddress, refreshTrigger]);
 
@@ -354,13 +354,13 @@ export default function AccountPage() {
           <div className="balance-card-header">
             <h3 className="balance-label">{t('account.totalBalance')}</h3>
             <div className="refresh-wrapper">
-              <button 
+              <button
                 type="button"
                 onClick={handleRefreshData}
                 className={`refresh-button ${isRefreshing ? 'refreshing' : ''}`}
                 disabled={isRefreshing}
                 aria-label={t('account.refresh')}
-                style={{ 
+                style={{
                   padding: '8px',
                   cursor: 'pointer',
                   background: 'none',
@@ -374,18 +374,17 @@ export default function AccountPage() {
               </button>
             </div>
           </div>
-          <div className={`balance-amount ${
-            balance.length > 35 ? 'extra-large-number' : 
-            balance.length > 25 ? 'very-large-number' : 
-            balance.length > 15 ? 'large-number' : ''
-          }`}>
-            {isBalanceLoading ? 
+          <div className={`balance-amount ${balance.length > 35 ? 'extra-large-number' :
+              balance.length > 25 ? 'very-large-number' :
+                balance.length > 15 ? 'large-number' : ''
+            }`}>
+            {isBalanceLoading ?
               <div className="shimmer" style={{ height: '36px', width: '180px' }}></div> :
               `${balance}`
             }
           </div>
           <div className="balance-currency">{t('account.currency')}</div>
-          
+
           <div className="quick-actions">
             <Button variant="primary" size="small" fullWidth={false} className="action-button">
               <FiArrowUpRight /> <span>{t('account.send')}</span>
@@ -399,9 +398,9 @@ export default function AccountPage() {
         <div className="transactions-section">
           <div className="section-header">
             <h3 className="section-title">{t('account.transactionHistory')}</h3>
-            
+
             <div className="filter-actions">
-              <div 
+              <div
                 className={`filter-dropdown ${hasActiveFilters ? 'active' : ''}`}
                 onClick={() => setShowFilterModal(true)}
               >
@@ -410,17 +409,17 @@ export default function AccountPage() {
               </div>
             </div>
           </div>
-          
-          <Modal 
-            isOpen={showFilterModal} 
-            onClose={() => setShowFilterModal(false)} 
+
+          <Modal
+            isOpen={showFilterModal}
+            onClose={() => setShowFilterModal(false)}
             title={t('filter.title')}
           >
             <div className="filter-content">
               <div className="filter-group">
                 <label>{t('filter.direction')}</label>
                 <div className="custom-select">
-                  <select 
+                  <select
                     value={tempDirection}
                     onChange={(e) => setTempDirection(e.target.value as DirectionType)}
                     className="filter-select"
@@ -431,11 +430,11 @@ export default function AccountPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>{t('filter.sort')}</label>
                 <div className="custom-select">
-                  <select 
+                  <select
                     value={tempSort}
                     onChange={(e) => setTempSort(e.target.value as SortType)}
                     className="filter-select"
@@ -445,13 +444,13 @@ export default function AccountPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>{t('filter.fromDate')}</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={tempStartDate}
                     onChange={(e) => setTempStartDate(e.target.value)}
                     className="date-input"
@@ -459,13 +458,13 @@ export default function AccountPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>{t('filter.toDate')}</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={tempEndDate}
                     onChange={(e) => setTempEndDate(e.target.value)}
                     className="date-input"
@@ -473,20 +472,20 @@ export default function AccountPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="filter-button-row">
-                <Button 
-                  variant="outline" 
-                  size="small" 
+                <Button
+                  variant="outline"
+                  size="small"
                   onClick={resetFilters}
                   className="reset-button"
                   fullWidth
                 >
                   {t('filter.reset')}
                 </Button>
-                <Button 
-                  variant="primary" 
-                  size="small" 
+                <Button
+                  variant="primary"
+                  size="small"
                   onClick={applyFilters}
                   className="apply-button"
                   fullWidth
