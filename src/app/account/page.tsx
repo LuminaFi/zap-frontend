@@ -173,7 +173,7 @@ export default function AccountPage() {
 
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-  }, [hasMore, isLoadingMore, currentPage]);
+  }, [hasMore, isLoadingMore, currentPage, limit]);
 
   const updateUrlParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -281,7 +281,7 @@ export default function AccountPage() {
         setHasMore(data.pagination.hasMore);
 
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
-          const isSent = tx.from.toLowerCase() === userAddress.toLowerCase();
+          const isSent = userAddress ? tx.from.toLowerCase() === userAddress.toLowerCase() : false;
 
           return {
             id: tx.hash,
@@ -308,7 +308,7 @@ export default function AccountPage() {
     };
 
     fetchTransactions();
-  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger, buildQueryParams]);
+  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger]);
 
   useEffect(() => {
     const fetchBalance = async () => {

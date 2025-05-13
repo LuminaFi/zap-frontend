@@ -11,11 +11,45 @@ import { useDisconnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { FiSettings, FiUser, FiShield, FiCreditCard, FiX } from 'react-icons/fi';
 import { useAccount } from 'wagmi';
+import { useTheme } from '../providers/ThemeProvider';
+
+const copyAnimationStyles = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .copy-notification {
+    position: absolute;
+    top: -35px;
+    right: 0;
+    background-color: #4ade80;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-in-out forwards;
+    z-index: 10;
+  }
+  
+  .dark .copy-notification {
+    background-color: #10b981;
+  }
+`;
 
 export default function ProfilePage() {
   const router = useRouter();
   const { disconnect } = useDisconnect();
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
     bankName: '',
@@ -25,6 +59,22 @@ export default function ProfilePage() {
   });
   const [formattedAmount, setFormattedAmount] = useState('');
   const { address } = useAccount();
+  const [isCopied, setIsCopied] = useState(false);
+
+  const truncateAddress = (address?: string) => {
+    if (!address || address.length < 10) return address || '';
+    return `${address.substring(0, 10)}...${address.substring(address.length - 4)}`;
+  };
+
+  const handleCopyAddress = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
+    }
+  };
 
   const handleRemoveWallet = () => {
     disconnect();
@@ -78,13 +128,14 @@ export default function ProfilePage() {
 
   return (
     <MobileLayout title={t('profile.title') || 'Profile'} showAvatar>
+      <style jsx global>{copyAnimationStyles}</style>
       <div className="profile-container">
         <div className="profile-section">
           <div className="profile-header">
             <div className="profile-avatar">JK</div>
             <div className="profile-info">
               <h2 className="profile-name">John Kusuma</h2>
-              <p className="profile-wallet">{address}</p>
+              <p className="profile-wallet">{truncateAddress(address)}</p>
             </div>
           </div>
         </div>
@@ -94,12 +145,64 @@ export default function ProfilePage() {
             <FiUser className="section-icon" />
             {t('profile.accountInfo') || 'Account Information'}
           </h3>
-          <FormField
-            label={t('profile.walletAddress') || 'Wallet Address'}
-            type="text"
-            readOnly
-            value={address}
-          />
+          <div className="wallet-address-field">
+            <label className="field-label">
+              {t('profile.walletAddress') || 'Recipient Address'}
+            </label>
+            <div className={`address-display ${theme}`} style={{ 
+              padding: '12px 14px',
+              backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
+              borderRadius: '8px',
+              border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '8px',
+              marginBottom: '16px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+              position: 'relative'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <p className="address-text" style={{ 
+                  fontFamily: 'monospace', 
+                  fontWeight: '500',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-all',
+                  fontSize: '14px'
+                }}>
+                  {truncateAddress(address)}
+                </p>
+              </div>
+              
+              <div style={{ position: 'relative' }}>
+                <button 
+                  type="button" 
+                  onClick={handleCopyAddress}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+                    fontSize: '12px',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    backgroundColor: theme === 'dark' ? '#374151' : '#e5e7eb',
+                  }}
+                >
+                  {isCopied ? 'Copied!' : 'Copy'}
+                </button>
+                
+                {isCopied && (
+                  <div className={`copy-notification ${theme}`}>
+                    Copied!
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
           <FormField
             label={t('profile.balance') || 'Balance'}
             type="text"

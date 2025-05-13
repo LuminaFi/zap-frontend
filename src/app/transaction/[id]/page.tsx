@@ -89,7 +89,7 @@ export default function TransactionDetailPage() {
     return `${address.substring(0, 10)}...${address.substring(address.length - 8)}`;
   };
 
-  const isSent = transaction?.from?.toLowerCase() === userAddress.toLowerCase();
+  const isSent = transaction?.from?.toLowerCase() === userAddress?.toLowerCase();
   const handleBack = () => {
     router.back();
   };
@@ -161,7 +161,7 @@ export default function TransactionDetailPage() {
                 <div className="detail-value address">
                   {transaction.from}
                   <span className="address-label">
-                    {transaction.from.toLowerCase() === userAddress.toLowerCase() && '(You)'}
+                    {transaction.from.toLowerCase() === userAddress?.toLowerCase() && '(You)'}
                   </span>
                 </div>
               </div>
@@ -171,7 +171,7 @@ export default function TransactionDetailPage() {
                 <div className="detail-value address">
                   {transaction.to}
                   <span className="address-label">
-                    {transaction.to.toLowerCase() === userAddress.toLowerCase() && '(You)'}
+                    {transaction.to.toLowerCase() === userAddress?.toLowerCase() && '(You)'}
                   </span>
                 </div>
               </div>

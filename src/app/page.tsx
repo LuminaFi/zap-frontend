@@ -24,33 +24,33 @@ export default function Home() {
           <div className="login-logo">
             <div className="logo-container">
               <div className="lightning-effect"></div>
-              <Image 
-                src="/zap-logo.png" 
-                alt="Zap Logo" 
-                width={120} 
+              <Image
+                src="/zap-logo.png"
+                alt="Zap Logo"
+                width={120}
                 height={120}
                 className="zap-logo"
                 priority
               />
             </div>
-            <h2 className="logo-title">BANK <span className="logo-accent">INDONESIA</span></h2>
+            <h2 className="logo-title">ZAP</h2>
           </div>
-          
-        <div className="login-container">
-          {!address ? (
-            <>
-              <h1 className="login-title">Login</h1>
-              <div className="login-content">
-                <p className="login-subtitle">Connect Wallet</p>
-                <ConnectButton/>
-              </div>
-            </>
-          ): (
+
+          <div className="login-container">
+            {!address ? (
+              <>
+                <h1 className="login-title">Login</h1>
+                <div className="login-content">
+                  <p className="login-subtitle">Connect Wallet</p>
+                  <ConnectButton />
+                </div>
+              </>
+            ) : (
               <div className="authenticating">
                 <div className="loading-spinner"></div>
-            <h1 className="login-title">Authenticating...</h1>
+                <h1 className="login-title">Authenticating...</h1>
               </div>
-          )}
+            )}
           </div>
         </div>
       </div>
