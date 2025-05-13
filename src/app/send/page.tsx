@@ -3,19 +3,22 @@
 import { useEffect, useState, useRef } from "react";
 import { MobileLayout } from "../components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BACKEND_URL, ETHEREUM_ADDRESS } from "../util/constant";
+import { BACKEND_URL } from "../util/constant";
 import {
   type BaseError,
   useSendTransaction,
   useWaitForTransactionReceipt,
+  useWriteContract,
 } from "wagmi";
-import { parseEther } from "viem";
+import { erc20Abi, parseEther, parseUnits } from "viem";
 import { DefaultError, useMutation, useQuery } from "@tanstack/react-query";
 import type {
   AddressType,
   calculateAmountResponse,
   QRTypes,
   SendData,
+  Token,
+  TransferFeeResponse,
   TransferIDRXPayload,
   TransferIDRXResponse,
   TransferLimitResponse,
@@ -25,6 +28,9 @@ import { useLanguage } from "../providers/LanguageProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { FaChevronDown } from "react-icons/fa";
 import Image from "next/image";
+import { TransferLimit } from "../components/TransferLimit";
+import { getTransferLimit } from "../util/getTransferLimit";
+import { formatNumber } from "../util/formatNumber";
 
 const copyAnimationStyles = `
   @keyframes fadeIn {
@@ -75,17 +81,6 @@ interface Network {
   logoUrl: string;
 }
 
-interface Token {
-  id: string;
-  symbol: string;
-  logoUrl: string;
-  name: string;
-  addresses: {
-    mainnet: string;
-    testnet?: string;
-  };
-}
-
 const transfer = async ({
   recipientAddress,
   idrxAmount,
@@ -111,13 +106,6 @@ const transfer = async ({
     amount: data.amount,
     transactionHash: data.transactionHash,
   };
-};
-
-const getTransferLimit = async (): Promise<TransferLimitResponse> => {
-  const transferLimitResponse = await fetch(`${BACKEND_URL}/transfer-limits`, {
-    method: "GET",
-  });
-  return await transferLimitResponse.json();
 };
 
 const getSupportedNetworks = async (): Promise<Network[]> => {
@@ -206,15 +194,20 @@ export default function SendPage() {
 
   const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isValidAmount, setIsValidAmount] = useState(false);
   
   const [isCopied, setIsCopied] = useState(false);
 
-  const { data: hash, error, sendTransaction } = useSendTransaction();
+  const { data: ethHash, error: ethError, sendTransaction } = useSendTransaction();
+  const { data: tokenHash, error: tokenError, writeContract} = useWriteContract();
+  const activeError = selectedToken?.id === "ethereum" ? ethError : tokenError;
+
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
     isError: isErrorTrf,
-  } = useWaitForTransactionReceipt({ hash });
+  } = useWaitForTransactionReceipt({ hash: selectedToken?.id === "ethereum" ? ethHash : tokenHash });
   const { mutate: transferIDRX, isPending: isLoadingTrf } = useMutation<
     TransferIDRXResponse,
     DefaultError,
@@ -228,10 +221,9 @@ export default function SendPage() {
   const {
     data: limitData,
     isLoading: isLoadingLimit,
-    isSuccess: isLimitSuccess,
   } = useQuery<TransferLimitResponse>({
-    queryKey: ["limit"],
-    queryFn: getTransferLimit,
+    queryKey: [`limit-${selectedToken?.symbol}`],
+    queryFn: () => getTransferLimit(selectedToken!),
   });
 
   useEffect(() => {
@@ -282,6 +274,9 @@ export default function SendPage() {
       setSendData({ address, amount });
     }
     setQRType(amount ? "dynamic" : "static");
+    if (amount) {
+      setIsValidAmount(true)
+    }
   }, [search]);
 
   useEffect(() => {
@@ -315,31 +310,41 @@ export default function SendPage() {
     };
   }, []);
 
-  const calculateAmount = async (amount: number) => {
-    if (
-      !limitData ||
-      !isLimitSuccess ||
-      amount < parseFloat(limitData.minTransferAmount) ||
-      amount > parseFloat(limitData.maxTransferAmount)
-    ) {
-      throw new Error("Invalid transfer amount");
+  const calculateStaticQrAmount = async (amount: number) => {
+    const calculateAmountResponse = await fetch(
+      `${BACKEND_URL}/calculate-fees?token=${selectedToken?.id}&amount=${amount}`,
+      {
+        method: "GET",
+      }
+    );
+    const amountWithFee: TransferFeeResponse =
+      await calculateAmountResponse.json();
+    if (!amountWithFee || !amountWithFee.success) {
+      throw new Error("Failed to calculate amount");
     }
 
-    const calculateSourcesResponse = await fetch(
-      `${BACKEND_URL}/calculate-source?token=ethereum&idrxAmount=${amount}`,
+    return `${ amountWithFee.result.amountBeforeFees + amountWithFee.result.totalFeeAmount }`;
+  };
+
+  const calculateDynamicQrAmount = async (amount: number) => {
+    const calculateAmountResponse = await fetch(
+      `${BACKEND_URL}/calculate-source?token=${selectedToken?.id}&idrxAmount=${amount}`,
       {
         method: "GET",
       }
     );
     const amountWithFee: calculateAmountResponse =
-      await calculateSourcesResponse.json();
+      await calculateAmountResponse.json();
     if (!amountWithFee || !amountWithFee.success) {
       throw new Error("Failed to calculate amount");
     }
 
-    return `${amountWithFee.fees.amountBeforeFees + amountWithFee.fees.totalFeeAmount
-      }`;
+    return `${ amountWithFee.fees.amountBeforeFees + amountWithFee.fees.totalFeeAmount }`;
   };
+
+  const calculateAmount = async (amount: number) => {
+    return qrType === "static" ? calculateStaticQrAmount(amount) : calculateDynamicQrAmount(amount);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,12 +352,22 @@ export default function SendPage() {
 
     calculateAmount(sendData.amount!)
       .then((amount) => {
-        sendTransaction({
-          to: `${ETHEREUM_ADDRESS}` as AddressType,
-          value: parseEther(amount),
-        });
+        if (selectedToken?.id === "ethereum") {
+          return sendTransaction({
+            to: `${selectedToken.addresses.testnet}` as AddressType,
+            value: parseEther(amount),
+          });
+        }
 
-        console.log("Transaction sent:", hash);
+        return writeContract({
+          address: '0x2728DD8B45B788e26d12B13Db5A244e5403e7eda', // smart contract address, probably need to be changed since this can only handle usdt
+          abi: erc20Abi,
+          functionName: "transfer",
+          args: [
+            `${selectedToken?.addresses.testnet}` as AddressType,
+            parseUnits(amount, 2), // hardcoded for now, probably need to get the decimals for each token from backend
+          ],
+        });
       })
       .catch((error) => {
         console.error("Error sending transaction:", error);
@@ -385,33 +400,36 @@ export default function SendPage() {
     }
   };
 
-  // Format number with commas as thousands separators
-  const formatNumber = (value: string) => {
-    // Remove any non-digit characters
-    const numericValue = value.replace(/[^\d]/g, '');
-    
-    // Format with commas
-    if (numericValue === '') return '';
-    
-    // Parse as integer and format with commas
-    return new Intl.NumberFormat('en-US').format(parseInt(numericValue));
-  };
-
   // Handler for amount input changes
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
     // Remove commas for the actual numeric value
-    const numericValue = value.replace(/,/g, '');
+    const numericValue = value.replace(/\,/g, '');
+    const newAmount = numericValue === '' ? undefined : Number(numericValue);
     
     // Store the actual numeric value in state
     setSendData({
       ...sendData,
-      amount: numericValue === '' ? undefined : Number(numericValue),
+      amount: newAmount,
     });
     
     // Update the formatted display value
-    setFormattedAmount(formatNumber(value));
+    if (value.includes(".")) {
+      setFormattedAmount(value);
+    } else {
+      setFormattedAmount(formatNumber(value));
+    }
+
+    if (!newAmount) {
+      return;
+    }
+
+    if (newAmount < parseFloat(limitData!.tokenLimits.minTokenAmount) || newAmount > parseFloat(limitData!.tokenLimits.maxTokenAmount)) {
+      setIsValidAmount(false);
+    } else {
+      setIsValidAmount(true);
+    }
   };
 
   // On component mount, initialize formatted amount if there's an amount in sendData
@@ -863,7 +881,7 @@ export default function SendPage() {
                         fontSize: '16px',
                         color: theme === 'dark' ? '#6b7280' : '#4b5563'
                       }}>
-                        {t("send.idrxPrefix") || "IDRX"}
+                        {selectedToken?.symbol.toUpperCase()}
                       </div>
                       <input
                         id="amount"
@@ -897,71 +915,15 @@ export default function SendPage() {
                       />
                     </div>
                     
-                    <div className="transfer-limits-container" style={{ 
-                      marginTop: 16, 
-                      padding: 16,
-                      borderRadius: 8, 
-                      backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
-                      border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`,
-                    }}>
-                      <div className="transfer-limit-header" style={{
-                        marginBottom: '12px',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        color: theme === 'dark' ? '#e5e7eb' : '#374151'
-                      }}>
-                        Transfer Limits
-                      </div>
-                      <div className="transfer-limit-item" style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center', 
-                        marginBottom: 8,
-                        padding: '6px 0'
-                      }}>
-                        <span style={{ fontSize: 14, color: theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
-                          Min. Transfer Amount:
-                        </span>
-                        <span style={{ 
-                          fontWeight: 600, 
-                          fontSize: 14, 
-                          backgroundColor: theme === 'dark' ? '#374151' : '#e5e7eb',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          color: theme === 'dark' ? '#e5e7eb' : '#374151'
-                        }}>
-                          {new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(parseFloat(limitData?.minTransferAmount || "0"))} IDRX
-                        </span>
-                      </div>
-                      <div className="transfer-limit-item" style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        padding: '6px 0'
-                      }}>
-                        <span style={{ fontSize: 14, color: theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
-                          Max. Transfer Amount:
-                        </span>
-                        <span style={{ 
-                          fontWeight: 600, 
-                          fontSize: 14,
-                          backgroundColor: theme === 'dark' ? '#374151' : '#e5e7eb',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          color: theme === 'dark' ? '#e5e7eb' : '#374151'
-                        }}>
-                          {new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(parseFloat(limitData?.maxTransferAmount || "0"))} IDRX
-                        </span>
-                      </div>
-                    </div>
+                    <TransferLimit transferLimit={limitData} selectedToken={selectedToken!} />
                   </div>
                 </div>
               </>
             )}
 
-            {error && (
+            {activeError && (
               <div className={`error-message ${theme}`}>
-                {(error as BaseError).shortMessage || error.message}
+                {(activeError as BaseError).shortMessage || activeError.message}
               </div>
             )}
 
@@ -970,7 +932,7 @@ export default function SendPage() {
               variant="primary"
               size="large"
               fullWidth
-              disabled={isConfirming || isSubmitting || !selectedNetwork || networks.length === 0 || !selectedToken || !selectedToken.addresses.testnet}
+              disabled={isConfirming || isSubmitting || !selectedNetwork || networks.length === 0 || !selectedToken || !selectedToken.addresses.testnet || !isValidAmount}
               className="send-button"
             >
               {isConfirming

@@ -12,6 +12,24 @@ export interface TransferLimitRecommendation {
   healthDescription: string;
 }
 
+export interface Token {
+  id: string;
+  symbol: string;
+  logoUrl: string;
+  name: string;
+  addresses: {
+    mainnet: string;
+    testnet?: string;
+  };
+}
+
+export interface TokenLimit {
+  minTokenAmount: string;
+  maxTokenAmount: string;
+  recommendedMinTokenAmount: string;
+  recommendedMaxTokenAmount: string;
+}
+
 export interface TransferLimitResponse {
   success: boolean;
   reserve: string;
@@ -22,6 +40,7 @@ export interface TransferLimitResponse {
   reserveUtilizationPercentage: string;
   healthStatus: string;
   recommendations: TransferLimitRecommendation;
+  tokenLimits: TokenLimit;
 }
 
 export interface TransferFee {
@@ -42,6 +61,11 @@ export interface TransferFee {
   adminFeePercentageFormatted: string;
   spreadFeePercentageFormatted: string;
   totalFeePercentageFormatted: string;
+}
+
+export interface TransferFeeResponse {
+  success: boolean;
+  result: TransferFee;
 }
 
 export interface calculateAmountResponse {

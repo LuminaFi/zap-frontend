@@ -5,11 +5,56 @@ import { MobileLayout } from "../components/MobileLayout";
 import { Button } from "../components/Button";
 import { QRCode } from "react-qrcode-logo";
 import { FormField } from "../components/FormField";
+import { TransferLimit } from "../components/TransferLimit";
+import { useQuery } from "@tanstack/react-query";
+import { TransferLimitResponse } from "../send/types";
+import { getTransferLimit } from "../util/getTransferLimit";
+import { formatNumber } from "../util/formatNumber";
 
 export default function ReceivePage() {
   const [isDynamic, setIsDynamic] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [amount, setAmount] = useState<number>(0);
+  const [formattedAmount, setFormattedAmount] = useState("");
+  const [isValidAmount, setIsValidAmount] = useState(false);
+  
+  const selectedToken = {
+    symbol: "IDRX",
+  }
+
+  const {
+    data: limitData,
+    isLoading: isLoadingLimit,
+  } = useQuery<TransferLimitResponse>({
+    queryKey: [`limit-${selectedToken?.symbol}`],
+    queryFn: () => getTransferLimit(),
+  });
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    const numericValue = value.replace(/\,/g, '');
+    const newAmount = numericValue === '' ? undefined : Number(numericValue);
+    
+    setAmount(newAmount || 0);
+    
+    // Update the formatted display value
+    if (value.includes(".")) {
+      setFormattedAmount(value);
+    } else {
+      setFormattedAmount(formatNumber(value));
+    }
+
+    if (!newAmount) {
+      return;
+    }
+
+    if (newAmount < parseFloat(limitData!.minTransferAmount) || newAmount > parseFloat(limitData!.maxTransferAmount)) {
+      setIsValidAmount(false);
+    } else {
+      setIsValidAmount(true);
+    }
+  };
 
   return (
     <MobileLayout title="Receive" showAvatar>
@@ -36,14 +81,36 @@ export default function ReceivePage() {
             />
           </div>
         ) : null}
-        {isDynamic && !isSubmitted ? (
-          <>
-            <FormField
-              label="Amount"
-              type="number"
-              onChange={(event) => setAmount(Number(event.target.value ?? 0))}
+
+        {isDynamic && isLoadingLimit ? (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div className="loading-spinner"
+              style={{ alignSelf: "center" }}
             />
-            <Button onClick={() => setIsSubmitted(true)}>Submit</Button>
+          </div>  
+        ) : null}
+
+        {isDynamic && !isSubmitted && !isLoadingLimit ? (
+          <>
+            <div style={{
+              position: 'relative',
+              marginBottom: '16px'
+            }}>
+              <FormField
+                label="Amount"
+                type="string"
+                value={formattedAmount}
+                onChange={handleAmountChange}
+              />
+              <TransferLimit transferLimit={limitData} selectedToken={selectedToken} />
+            </div>
+
+            <Button 
+            onClick={() => setIsSubmitted(true)}
+            disabled={!isValidAmount}
+            className="send-button"
+            
+            >Submit</Button>
           </>
         ) : null}
         {!isDynamic && !isSubmitted ? (
