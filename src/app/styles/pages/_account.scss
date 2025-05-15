@@ -48,40 +48,17 @@
   font-weight: 700;
   margin-bottom: 4px;
   line-height: 1.2;
-  white-space: nowrap;
+  word-break: break-word;
   max-width: 100%;
-  overflow: visible;
-  letter-spacing: -0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   
   &.large-number {
-    font-size: 22px;
-    letter-spacing: -0.8px;
+    font-size: 24px;
   }
   
   &.very-large-number {
-    font-size: 16px;
-    letter-spacing: -1px;
-  }
-  
-  &.extra-large-number {
-    font-size: 12px;
-    letter-spacing: -1.2px;
-  }
-  
-  @media (max-width: 380px) {
-    font-size: 24px;
-    
-    &.large-number {
-      font-size: 18px;
-    }
-    
-    &.very-large-number {
-      font-size: 14px;
-    }
-    
-    &.extra-large-number {
-      font-size: 10px;
-    }
+    font-size: 20px;
   }
 }
 

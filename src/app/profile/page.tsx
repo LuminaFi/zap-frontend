@@ -10,46 +10,11 @@ import { useLanguage } from '../providers/LanguageProvider';
 import { useDisconnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { FiSettings, FiUser, FiShield, FiCreditCard, FiX } from 'react-icons/fi';
-import { useAccount } from 'wagmi';
-import { useTheme } from '../providers/ThemeProvider';
-
-const copyAnimationStyles = `
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .copy-notification {
-    position: absolute;
-    top: -35px;
-    right: 0;
-    background-color: #4ade80;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    animation: fadeIn 0.3s ease-in-out forwards;
-    z-index: 10;
-  }
-  
-  .dark .copy-notification {
-    background-color: #10b981;
-  }
-`;
 
 export default function ProfilePage() {
   const router = useRouter();
   const { disconnect } = useDisconnect();
   const { t } = useLanguage();
-  const { theme } = useTheme();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
     bankName: '',
@@ -58,23 +23,6 @@ export default function ProfilePage() {
     amount: ''
   });
   const [formattedAmount, setFormattedAmount] = useState('');
-  const { address } = useAccount();
-  const [isCopied, setIsCopied] = useState(false);
-
-  const truncateAddress = (address?: string) => {
-    if (!address || address.length < 10) return address || '';
-    return `${address.substring(0, 10)}...${address.substring(address.length - 4)}`;
-  };
-
-  const handleCopyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
-      setIsCopied(true);
-      setTimeout(() => {
-        setIsCopied(false);
-      }, 2000);
-    }
-  };
 
   const handleRemoveWallet = () => {
     disconnect();
@@ -91,7 +39,7 @@ export default function ProfilePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
+    
     if (name === 'amount') {
       const numericValue = value.replace(/[^\d]/g, '');
       if (numericValue === '') {
@@ -118,17 +66,16 @@ export default function ProfilePage() {
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     console.log('Withdraw request:', withdrawForm);
-
-
+    
+   
     alert('Withdrawal request submitted successfully!');
     closeWithdrawModal();
   }
 
   return (
     <MobileLayout title={t('profile.title') || 'Profile'} showAvatar>
-      <style jsx global>{copyAnimationStyles}</style>
       <div className="profile-container">
         <div className="profile-section">
           <div className="profile-header">
@@ -204,6 +151,12 @@ export default function ProfilePage() {
           </div>
           
           <FormField
+            label={t('profile.walletAddress') || 'Wallet Address'}
+            type="text"
+            readOnly
+            value="0x1234567890abcdef1234567890abcdef12345678"
+          />
+          <FormField
             label={t('profile.balance') || 'Balance'}
             type="text"
             readOnly
@@ -216,8 +169,8 @@ export default function ProfilePage() {
             <FiCreditCard className="section-icon" />
             {t('profile.transactions') || 'Transactions'}
           </h3>
-          <Button
-            variant="primary"
+          <Button 
+            variant="primary" 
             onClick={openWithdrawModal}
             fullWidth
             style={{ marginBottom: '12px' }}
@@ -258,14 +211,14 @@ export default function ProfilePage() {
             <h3 className="modal-title">
               {t('profile.withdrawToBank')}
             </h3>
-
-            <button
+            
+            <button 
               onClick={closeWithdrawModal}
               className="modal-close-button"
             >
               <FiX />
             </button>
-
+            
             <div style={{ padding: '0 20px 20px' }}>
               <form onSubmit={handleWithdraw}>
                 <div style={{ marginBottom: '16px' }}>
@@ -282,7 +235,7 @@ export default function ProfilePage() {
                     placeholder="Enter bank name"
                   />
                 </div>
-
+                
                 <div style={{ marginBottom: '16px' }}>
                   <label className="form-label">
                     {t('profile.accountNumber')}
@@ -297,7 +250,7 @@ export default function ProfilePage() {
                     placeholder="Enter account number"
                   />
                 </div>
-
+                
                 <div style={{ marginBottom: '16px' }}>
                   <label className="form-label">
                     {t('profile.accountName')}
@@ -312,7 +265,7 @@ export default function ProfilePage() {
                     placeholder="Enter account holder name"
                   />
                 </div>
-
+                
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">
                     {t('profile.amount')}
@@ -333,17 +286,17 @@ export default function ProfilePage() {
                     />
                   </div>
                 </div>
-
+                
                 <div className="form-actions">
-                  <Button
-                    type="button"
+                  <Button 
+                    type="button" 
                     variant="secondary"
                     onClick={closeWithdrawModal}
                   >
                     {t('profile.cancel')}
                   </Button>
-                  <Button
-                    type="submit"
+                  <Button 
+                    type="submit" 
                     variant="primary"
                   >
                     {t('profile.withdraw')}
