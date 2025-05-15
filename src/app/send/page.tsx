@@ -13,6 +13,7 @@ import type {
   QRTypes,
   SendData,
   Token,
+  TokenPrice,
   TransferFeeResponse,
   TransferIDRXPayload,
   TransferIDRXResponse,
@@ -129,6 +130,28 @@ const getSupportedNetworks = async (): Promise<Network[]> => {
   } catch (error) {
     console.error('Error fetching networks:', error);
     return [];
+  }
+};
+
+const getTokenPrice = async (token: string): Promise<TokenPrice> => {
+  try {
+    const response = await fetch(`https://zap-service-jkce.onrender.com/api/token-price/${token}`, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch token price: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data
+  } catch (error) {
+    console.error('Error fetching networks:', error);
+    throw error;
   }
 };
 
@@ -346,7 +369,7 @@ export default function SendPage() {
         const decimal = await readContract(config, {
           address: `${selectedToken?.addresses.testnet}` as AddressType,
           abi: erc20Abi,
-          functionName: 'decimals'
+          functionName: "decimals",
         });
 
         const result = await writeContract(config, {
@@ -354,6 +377,13 @@ export default function SendPage() {
           abi: erc20Abi,
           functionName: "transfer",
           args: [ZAP_POOL, parseUnits(amount, decimal)],
+        });
+
+        const tokenPrice = await getTokenPrice(selectedToken?.symbol!);
+
+        transferIDRX({
+          recipientAddress: sendData.address!,
+          idrxAmount: Math.round(tokenPrice.priceIdr * Number(amount)),
         });
       })
       .catch((error) => {
@@ -424,7 +454,7 @@ export default function SendPage() {
     if (sendData.amount) {
       setFormattedAmount(formatNumber(String(sendData.amount)));
     }
-  }, []);
+  }, [sendData.amount]);
 
   return (
     <MobileLayout title={t("send.title") || "Send"} showAvatar>

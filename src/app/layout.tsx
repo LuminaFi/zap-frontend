@@ -7,8 +7,8 @@ import { LanguageProvider } from './providers/LanguageProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Bank Indonesia',
-  description: 'Indonesian banking mobile application',
+  title: 'Zap',
+  description: 'Zap mobile application',
 };
 
 export default function RootLayout({

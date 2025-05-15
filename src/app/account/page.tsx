@@ -6,9 +6,33 @@ import { TransactionSkeleton } from '../components/TransactionSkeleton';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw } from 'react-icons/fi';
+import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw, FiInbox } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '../providers/LanguageProvider';
+import { useAccount } from 'wagmi';
+import { useTheme } from '../providers/ThemeProvider';
+
+// Simple formatter for large numbers to K, M, B format
+const formatAbbreviatedNumber = (numStr: string): string => {
+  // Remove any non-numeric characters except dots
+  const num = parseFloat(numStr.replace(/[^\d.]/g, ''));
+  
+  if (isNaN(num)) return '0';
+  
+  if (num >= 1_000_000_000) {
+    return (num / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B';
+  }
+  
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
+  }
+  
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(2).replace(/\.00$/, '') + 'K';
+  }
+  
+  return num.toString();
+};
 
 interface ApiTransaction {
   id: string;
@@ -123,27 +147,9 @@ export default function AccountPage() {
   const limit = 5;
 
   const observer = useRef<IntersectionObserver | null>(null);
-  const lastTransactionElementRef = useCallback((node: HTMLDivElement) => {
-    if (isLoadingMore) return;
+  const { address: userAddress } = useAccount();
 
-    if (observer.current) observer.current.disconnect();
-
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMoreTransactions();
-      }
-    }, {
-      root: null,
-      rootMargin: '100px',
-      threshold: 0.1
-    });
-
-    if (node) observer.current.observe(node);
-  }, [isLoadingMore, hasMore, currentPage]);
-
-  const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
-
-  const buildQueryParams = (page: number) => {
+  const buildQueryParams = useCallback((page: number) => {
     const params = new URLSearchParams();
 
     params.append('page', page.toString());
@@ -164,7 +170,7 @@ export default function AccountPage() {
     }
 
     return params.toString();
-  };
+  }, [limit, direction, sort, startDate, endDate]);
 
   const loadMoreTransactions = useCallback(() => {
     if (!hasMore || isLoadingMore) return;
@@ -173,7 +179,25 @@ export default function AccountPage() {
 
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-  }, [hasMore, isLoadingMore, currentPage, limit]);
+  }, [hasMore, isLoadingMore, currentPage]);
+
+  const lastTransactionElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoadingMore) return;
+
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMoreTransactions();
+      }
+    }, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    });
+
+    if (node) observer.current.observe(node);
+  }, [isLoadingMore, hasMore, loadMoreTransactions]);
 
   const updateUrlParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -209,11 +233,11 @@ export default function AccountPage() {
     setSort(tempSort);
     setStartDate(tempStartDate);
     setEndDate(tempEndDate);
-    
+
     setTransactions([]);
     setCurrentPage(1);
     setShowFilterModal(false);
-    
+
     updateUrlParams();
   };
 
@@ -242,13 +266,13 @@ export default function AccountPage() {
 
   const handleRefreshData = () => {
     setIsRefreshing(true);
-    
+
     setTransactions([]);
     setCurrentPage(1);
     setError(null);
-    
+
     setRefreshTrigger(prev => prev + 1);
-    
+
     setTimeout(() => {
       setIsRefreshing(false);
     }, 800);
@@ -256,6 +280,11 @@ export default function AccountPage() {
 
   useEffect(() => {
     const fetchTransactions = async () => {
+      if (!userAddress) {
+        setIsLoading(false);
+        return;
+      }
+      
       const isInitialLoad = currentPage === 1;
 
       if (isInitialLoad) {
@@ -281,7 +310,7 @@ export default function AccountPage() {
         setHasMore(data.pagination.hasMore);
 
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
-          const isSent = tx.from.toLowerCase() === userAddress.toLowerCase();
+          const isSent = userAddress ? tx.from.toLowerCase() === userAddress.toLowerCase() : false;
 
           return {
             id: tx.hash,
@@ -308,21 +337,27 @@ export default function AccountPage() {
     };
 
     fetchTransactions();
-  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger]);
+  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger, buildQueryParams]);
 
   useEffect(() => {
     const fetchBalance = async () => {
+      if (!userAddress) {
+        setIsBalanceLoading(false);
+        setBalance('Rp 0');
+        return;
+      }
+
       setIsBalanceLoading(true);
-      
+
       try {
         const response = await fetch(`https://zap-service-jkce.onrender.com/api/idrx-balance/${userAddress}`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch balance: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
           setBalance(data.idrBalanceFormatted || 'Rp 0');
         } else {
@@ -336,7 +371,7 @@ export default function AccountPage() {
         setIsBalanceLoading(false);
       }
     };
-    
+
     fetchBalance();
   }, [userAddress, refreshTrigger]);
 
@@ -347,6 +382,8 @@ export default function AccountPage() {
   useEffect(() => {
   }, []);
 
+  const { theme } = useTheme();
+
   return (
     <MobileLayout title={t('account.title')} showAvatar>
       <div className="account-container">
@@ -354,13 +391,13 @@ export default function AccountPage() {
           <div className="balance-card-header">
             <h3 className="balance-label">{t('account.totalBalance')}</h3>
             <div className="refresh-wrapper">
-              <button 
+              <button
                 type="button"
                 onClick={handleRefreshData}
                 className={`refresh-button ${isRefreshing ? 'refreshing' : ''}`}
                 disabled={isRefreshing}
                 aria-label={t('account.refresh')}
-                style={{ 
+                style={{
                   padding: '8px',
                   cursor: 'pointer',
                   background: 'none',
@@ -375,13 +412,16 @@ export default function AccountPage() {
             </div>
           </div>
           <div className="balance-amount">
-            {isBalanceLoading ? 
-              <div className="shimmer" style={{ height: '36px', width: '180px' }}></div> :
-              `${balance}`
-            }
+            {isBalanceLoading ? (
+              <div className="shimmer" style={{ height: '36px', width: '180px' }}></div>
+            ) : (
+              balance.startsWith('Rp') ? 
+                `${balance.substring(0, 3)} ${formatAbbreviatedNumber(balance.substring(3).trim())}` :
+                `${formatAbbreviatedNumber(balance)}`
+            )}
           </div>
           <div className="balance-currency">{t('account.currency')}</div>
-          
+
           <div className="quick-actions">
             <Button variant="primary" size="small" fullWidth={false} className="action-button">
               <FiArrowUpRight /> <span>{t('account.send')}</span>
@@ -395,9 +435,9 @@ export default function AccountPage() {
         <div className="transactions-section">
           <div className="section-header">
             <h3 className="section-title">{t('account.transactionHistory')}</h3>
-            
+
             <div className="filter-actions">
-              <div 
+              <div
                 className={`filter-dropdown ${hasActiveFilters ? 'active' : ''}`}
                 onClick={() => setShowFilterModal(true)}
               >
@@ -406,17 +446,17 @@ export default function AccountPage() {
               </div>
             </div>
           </div>
-          
-          <Modal 
-            isOpen={showFilterModal} 
-            onClose={() => setShowFilterModal(false)} 
+
+          <Modal
+            isOpen={showFilterModal}
+            onClose={() => setShowFilterModal(false)}
             title={t('filter.title')}
           >
             <div className="filter-content">
               <div className="filter-group">
                 <label>{t('filter.direction')}</label>
                 <div className="custom-select">
-                  <select 
+                  <select
                     value={tempDirection}
                     onChange={(e) => setTempDirection(e.target.value as DirectionType)}
                     className="filter-select"
@@ -427,11 +467,11 @@ export default function AccountPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>{t('filter.sort')}</label>
                 <div className="custom-select">
-                  <select 
+                  <select
                     value={tempSort}
                     onChange={(e) => setTempSort(e.target.value as SortType)}
                     className="filter-select"
@@ -441,13 +481,13 @@ export default function AccountPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>{t('filter.fromDate')}</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={tempStartDate}
                     onChange={(e) => setTempStartDate(e.target.value)}
                     className="date-input"
@@ -455,13 +495,13 @@ export default function AccountPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="filter-group">
                 <label>{t('filter.toDate')}</label>
                 <div className="date-input-container">
                   <FiCalendar className="date-icon" />
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={tempEndDate}
                     onChange={(e) => setTempEndDate(e.target.value)}
                     className="date-input"
@@ -469,20 +509,20 @@ export default function AccountPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="filter-button-row">
-                <Button 
-                  variant="outline" 
-                  size="small" 
+                <Button
+                  variant="outline"
+                  size="small"
                   onClick={resetFilters}
                   className="reset-button"
                   fullWidth
                 >
                   {t('filter.reset')}
                 </Button>
-                <Button 
-                  variant="primary" 
-                  size="small" 
+                <Button
+                  variant="primary"
+                  size="small"
                   onClick={applyFilters}
                   className="apply-button"
                   fullWidth
@@ -531,8 +571,30 @@ export default function AccountPage() {
 
               </>
             ) : (
-              <div className="empty-transactions">
-                <p>{t('account.noTransactions')}</p>
+              <div className="empty-transactions" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px 20px',
+                textAlign: 'center',
+                backgroundColor: theme === 'dark' ? '#1f2937' : '#f9fafb',
+                borderRadius: '12px',
+                margin: '20px 0'
+              }}>
+                <FiInbox size={64} style={{
+                  color: theme === 'dark' ? '#4b5563' : '#9ca3af',
+                  marginBottom: '16px'
+                }} />
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  marginBottom: '8px',
+                  color: theme === 'dark' ? '#e5e7eb' : '#111827'
+                }}>
+
+                  {t('account.noTransactions') || 'Your transaction history will appear here once you start sending or receiving funds.'}
+                </h3>
               </div>
             )}
           </div>
