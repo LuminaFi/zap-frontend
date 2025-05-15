@@ -89,3 +89,11 @@ export type TransferIDRXResponse = {
   amount: string;
   transactionHash: string;
 };
+
+export interface Network {
+  id: string;
+  name: string;
+  logoUrl: string;
+  testnetChainId: string;
+  mainnetChainId: string;
+}

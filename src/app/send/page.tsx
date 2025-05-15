@@ -9,6 +9,7 @@ import { DefaultError, useMutation, useQuery } from "@tanstack/react-query";
 import type {
   AddressType,
   calculateAmountResponse,
+  Network,
   QRTypes,
   SendData,
   Token,
@@ -26,7 +27,9 @@ import { TransferLimit } from "../components/TransferLimit";
 import { getTransferLimit } from "../util/getTransferLimit";
 import { formatNumber } from "../util/formatNumber";
 import { readContract, writeContract } from "@wagmi/core";
-import { config } from "../util/wagmiConfig";
+import { config } from "../configs/xellarConfig";
+import { useConnections } from "wagmi";
+import { sepolia } from "viem/chains";
 
 const copyAnimationStyles = `
   @keyframes fadeIn {
@@ -70,12 +73,6 @@ const copyAnimationStyles = `
     -moz-appearance: textfield;
   }
 `;
-
-interface Network {
-  id: string;
-  name: string;
-  logoUrl: string;
-}
 
 const transfer = async ({
   recipientAddress,
@@ -352,16 +349,19 @@ export default function SendPage() {
           functionName: 'decimals'
         });
 
+        await writeContract(config, {
+          address: `${selectedToken?.addresses.testnet}` as AddressType,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [ZAP_POOL, parseUnits(amount, decimal)],
+        });
+
         const result = await writeContract(config, {
           address: `${selectedToken?.addresses.testnet}` as AddressType,
           abi: erc20Abi,
           functionName: "transfer",
-          args: [
-            ZAP_POOL,
-            parseUnits(amount, decimal), 
-          ],
+          args: [ZAP_POOL, parseUnits(amount, decimal)],
         });
-        console.log(result);
       })
       .catch((error) => {
         console.error("Error sending transaction:", error);
