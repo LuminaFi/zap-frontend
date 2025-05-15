@@ -7,13 +7,55 @@ import { Button } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { LanguageToggle } from '../components/LanguageToggle';
 import { useLanguage } from '../providers/LanguageProvider';
-import { useDisconnect } from 'wagmi';
+import { useDisconnect, useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
-import { FiSettings, FiUser, FiShield, FiCreditCard, FiX } from 'react-icons/fi';
+import { FiSettings, FiUser, FiShield, FiCreditCard, FiLogOut } from 'react-icons/fi';
+import { useTheme } from '../providers/ThemeProvider';
+import { Modal } from '../components/Modal';
+
+// Helper function to truncate Ethereum addresses
+const truncateAddress = (address?: string) => {
+  if (!address) return '';
+  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+};
+
+const copyAnimationStyles = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .copy-notification {
+    position: absolute;
+    top: -35px;
+    right: 0;
+    background-color: #4ade80;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-in-out forwards;
+    z-index: 10;
+  }
+  
+  .dark .copy-notification {
+    background-color: #10b981;
+  }
+`;
 
 export default function ProfilePage() {
   const router = useRouter();
   const { disconnect } = useDisconnect();
+  const { address } = useAccount();
+  const { theme } = useTheme();
   const { t } = useLanguage();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
@@ -23,6 +65,7 @@ export default function ProfilePage() {
     amount: ''
   });
   const [formattedAmount, setFormattedAmount] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleRemoveWallet = () => {
     disconnect();
@@ -36,6 +79,17 @@ export default function ProfilePage() {
   const closeWithdrawModal = () => {
     setIsWithdrawModalOpen(false);
   }
+
+  const handleCopyAddress = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      setIsCopied(true);
+      
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -76,6 +130,7 @@ export default function ProfilePage() {
 
   return (
     <MobileLayout title={t('profile.title') || 'Profile'} showAvatar>
+      <style jsx global>{copyAnimationStyles}</style>
       <div className="profile-container">
         <div className="profile-section">
           <div className="profile-header">
@@ -94,7 +149,7 @@ export default function ProfilePage() {
           </h3>
           <div className="wallet-address-field">
             <label className="field-label">
-              {t('profile.walletAddress') || 'Recipient Address'}
+              {t('profile.walletAddress') || 'Wallet Address'}
             </label>
             <div className={`address-display ${theme}`} style={{ 
               padding: '12px 14px',
@@ -117,7 +172,7 @@ export default function ProfilePage() {
                   wordBreak: 'break-all',
                   fontSize: '14px'
                 }}>
-                  {truncateAddress(address)}
+                  {address ? truncateAddress(address) : 'No wallet connected'}
                 </p>
               </div>
               
@@ -150,12 +205,6 @@ export default function ProfilePage() {
             </div>
           </div>
           
-          <FormField
-            label={t('profile.walletAddress') || 'Wallet Address'}
-            type="text"
-            readOnly
-            value="0x1234567890abcdef1234567890abcdef12345678"
-          />
           <FormField
             label={t('profile.balance') || 'Balance'}
             type="text"
@@ -199,114 +248,101 @@ export default function ProfilePage() {
             {t('profile.security') || 'Security'}
           </h3>
           <Button variant="danger" onClick={handleRemoveWallet}>
-            {t('profile.disconnect') || 'Disconnect Wallet'}
+            <FiLogOut style={{ marginRight: '8px' }} /> {t('profile.disconnect') || 'Disconnect Wallet'}
           </Button>
         </div>
       </div>
 
       {/* Withdraw Modal */}
-      {isWithdrawModalOpen && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <h3 className="modal-title">
-              {t('profile.withdrawToBank')}
-            </h3>
-            
-            <button 
-              onClick={closeWithdrawModal}
-              className="modal-close-button"
-            >
-              <FiX />
-            </button>
-            
-            <div style={{ padding: '0 20px 20px' }}>
-              <form onSubmit={handleWithdraw}>
-                <div style={{ marginBottom: '16px' }}>
-                  <label className="form-label">
-                    {t('profile.bankName')}
-                  </label>
-                  <input
-                    name="bankName"
-                    type="text"
-                    required
-                    value={withdrawForm.bankName}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Enter bank name"
-                  />
-                </div>
-                
-                <div style={{ marginBottom: '16px' }}>
-                  <label className="form-label">
-                    {t('profile.accountNumber')}
-                  </label>
-                  <input
-                    name="accountNumber"
-                    type="text"
-                    required
-                    value={withdrawForm.accountNumber}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Enter account number"
-                  />
-                </div>
-                
-                <div style={{ marginBottom: '16px' }}>
-                  <label className="form-label">
-                    {t('profile.accountName')}
-                  </label>
-                  <input
-                    name="accountName"
-                    type="text"
-                    required
-                    value={withdrawForm.accountName}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Enter account holder name"
-                  />
-                </div>
-                
-                <div style={{ marginBottom: '20px' }}>
-                  <label className="form-label">
-                    {t('profile.amount')}
-                  </label>
-                  <div className="amount-input-wrapper">
-                    <div className="amount-input-prefix">
-                      IDRX
-                    </div>
-                    <input
-                      name="amount"
-                      type="text"
-                      inputMode="numeric"
-                      required
-                      value={formattedAmount}
-                      onChange={handleInputChange}
-                      className="form-input amount-input"
-                      placeholder="Enter amount"
-                    />
-                  </div>
-                </div>
-                
-                <div className="form-actions">
-                  <Button 
-                    type="button" 
-                    variant="secondary"
-                    onClick={closeWithdrawModal}
-                  >
-                    {t('profile.cancel')}
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    variant="primary"
-                  >
-                    {t('profile.withdraw')}
-                  </Button>
-                </div>
-              </form>
+      <Modal 
+        isOpen={isWithdrawModalOpen}
+        onClose={closeWithdrawModal}
+        title={t('profile.withdrawToBank') || "Withdraw to Bank Account"}
+      >
+        <form onSubmit={handleWithdraw}>
+          <div style={{ marginBottom: '16px' }}>
+            <label className="form-label">
+              {t('profile.bankName') || "Bank Name"}
+            </label>
+            <input
+              name="bankName"
+              type="text"
+              required
+              value={withdrawForm.bankName}
+              onChange={handleInputChange}
+              className="form-input"
+              placeholder="Enter bank name"
+            />
+          </div>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <label className="form-label">
+              {t('profile.accountNumber') || "Account Number"}
+            </label>
+            <input
+              name="accountNumber"
+              type="text"
+              required
+              value={withdrawForm.accountNumber}
+              onChange={handleInputChange}
+              className="form-input"
+              placeholder="Enter account number"
+            />
+          </div>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <label className="form-label">
+              {t('profile.accountName') || "Account Holder Name"}
+            </label>
+            <input
+              name="accountName"
+              type="text"
+              required
+              value={withdrawForm.accountName}
+              onChange={handleInputChange}
+              className="form-input"
+              placeholder="Enter account holder name"
+            />
+          </div>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <label className="form-label">
+              {t('profile.amount') || "Amount"}
+            </label>
+            <div className="amount-input-wrapper">
+              <div className="amount-input-prefix">
+                IDRX
+              </div>
+              <input
+                name="amount"
+                type="text"
+                inputMode="numeric"
+                required
+                value={formattedAmount}
+                onChange={handleInputChange}
+                className="form-input amount-input"
+                placeholder="Enter amount"
+              />
             </div>
           </div>
-        </div>
-      )}
+          
+          <div className="form-actions">
+            <Button 
+              type="button" 
+              variant="secondary"
+              onClick={closeWithdrawModal}
+            >
+              {t('profile.cancel') || "Cancel"}
+            </Button>
+            <Button 
+              type="submit" 
+              variant="primary"
+            >
+              {t('profile.withdraw') || "Withdraw"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </MobileLayout>
   );
 } 

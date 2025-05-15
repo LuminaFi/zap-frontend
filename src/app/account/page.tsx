@@ -6,10 +6,33 @@ import { TransactionSkeleton } from '../components/TransactionSkeleton';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw } from 'react-icons/fi';
+import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw, FiInbox } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '../providers/LanguageProvider';
 import { useAccount } from 'wagmi';
+import { useTheme } from '../providers/ThemeProvider';
+
+// Simple formatter for large numbers to K, M, B format
+const formatAbbreviatedNumber = (numStr: string): string => {
+  // Remove any non-numeric characters except dots
+  const num = parseFloat(numStr.replace(/[^\d.]/g, ''));
+  
+  if (isNaN(num)) return '0';
+  
+  if (num >= 1_000_000_000) {
+    return (num / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B';
+  }
+  
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
+  }
+  
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(2).replace(/\.00$/, '') + 'K';
+  }
+  
+  return num.toString();
+};
 
 interface ApiTransaction {
   id: string;
@@ -256,6 +279,11 @@ export default function AccountPage() {
 
   useEffect(() => {
     const fetchTransactions = async () => {
+      if (!userAddress) {
+        setIsLoading(false);
+        return;
+      }
+
       const isInitialLoad = currentPage === 1;
 
       if (isInitialLoad) {
@@ -312,6 +340,12 @@ export default function AccountPage() {
 
   useEffect(() => {
     const fetchBalance = async () => {
+      if (!userAddress) {
+        setIsBalanceLoading(false);
+        setBalance('Rp 0');
+        return;
+      }
+
       setIsBalanceLoading(true);
 
       try {
@@ -347,6 +381,8 @@ export default function AccountPage() {
   useEffect(() => {
   }, []);
 
+  const { theme } = useTheme();
+
   return (
     <MobileLayout title={t('account.title')} showAvatar>
       <div className="account-container">
@@ -374,14 +410,14 @@ export default function AccountPage() {
               </button>
             </div>
           </div>
-          <div className={`balance-amount ${balance.length > 35 ? 'extra-large-number' :
-              balance.length > 25 ? 'very-large-number' :
-                balance.length > 15 ? 'large-number' : ''
-            }`}>
-            {isBalanceLoading ?
-              <div className="shimmer" style={{ height: '36px', width: '180px' }}></div> :
-              `${balance}`
-            }
+          <div className="balance-amount">
+            {isBalanceLoading ? (
+              <div className="shimmer" style={{ height: '36px', width: '180px' }}></div>
+            ) : (
+              balance.startsWith('Rp') ? 
+                `${balance.substring(0, 3)} ${formatAbbreviatedNumber(balance.substring(3).trim())}` :
+                `${formatAbbreviatedNumber(balance)}`
+            )}
           </div>
           <div className="balance-currency">{t('account.currency')}</div>
 
@@ -534,8 +570,30 @@ export default function AccountPage() {
 
               </>
             ) : (
-              <div className="empty-transactions">
-                <p>{t('account.noTransactions')}</p>
+              <div className="empty-transactions" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px 20px',
+                textAlign: 'center',
+                backgroundColor: theme === 'dark' ? '#1f2937' : '#f9fafb',
+                borderRadius: '12px',
+                margin: '20px 0'
+              }}>
+                <FiInbox size={64} style={{
+                  color: theme === 'dark' ? '#4b5563' : '#9ca3af',
+                  marginBottom: '16px'
+                }} />
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  marginBottom: '8px',
+                  color: theme === 'dark' ? '#e5e7eb' : '#111827'
+                }}>
+
+                  {t('account.noTransactions') || 'Your transaction history will appear here once you start sending or receiving funds.'}
+                </h3>
               </div>
             )}
           </div>

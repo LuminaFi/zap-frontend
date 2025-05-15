@@ -10,8 +10,10 @@ import { useQuery } from "@tanstack/react-query";
 import { TransferLimitResponse } from "../send/types";
 import { getTransferLimit } from "../util/getTransferLimit";
 import { formatNumber } from "../util/formatNumber";
+import { useAccount } from "wagmi";
 
 export default function ReceivePage() {
+  const { address } = useAccount();
   const [isDynamic, setIsDynamic] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [amount, setAmount] = useState<number>(0);
