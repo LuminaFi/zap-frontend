@@ -82,7 +82,7 @@ export default function ProfilePage() {
             <div className="profile-avatar">JK</div>
             <div className="profile-info">
               <h2 className="profile-name">John Kusuma</h2>
-              <p className="profile-wallet">0x123...abc</p>
+              <p className="profile-wallet">{truncateAddress(address)}</p>
             </div>
           </div>
         </div>
@@ -92,6 +92,64 @@ export default function ProfilePage() {
             <FiUser className="section-icon" />
             {t('profile.accountInfo') || 'Account Information'}
           </h3>
+          <div className="wallet-address-field">
+            <label className="field-label">
+              {t('profile.walletAddress') || 'Recipient Address'}
+            </label>
+            <div className={`address-display ${theme}`} style={{ 
+              padding: '12px 14px',
+              backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
+              borderRadius: '8px',
+              border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '8px',
+              marginBottom: '16px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+              position: 'relative'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <p className="address-text" style={{ 
+                  fontFamily: 'monospace', 
+                  fontWeight: '500',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-all',
+                  fontSize: '14px'
+                }}>
+                  {truncateAddress(address)}
+                </p>
+              </div>
+              
+              <div style={{ position: 'relative' }}>
+                <button 
+                  type="button" 
+                  onClick={handleCopyAddress}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+                    fontSize: '12px',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    backgroundColor: theme === 'dark' ? '#374151' : '#e5e7eb',
+                  }}
+                >
+                  {isCopied ? 'Copied!' : 'Copy'}
+                </button>
+                
+                {isCopied && (
+                  <div className={`copy-notification ${theme}`}>
+                    Copied!
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
           <FormField
             label={t('profile.walletAddress') || 'Wallet Address'}
             type="text"
@@ -134,7 +192,7 @@ export default function ProfilePage() {
             <LanguageToggle />
           </div>
         </div>
-        
+
         <div className="profile-section">
           <h3 className="section-title">
             <FiShield className="section-icon" />

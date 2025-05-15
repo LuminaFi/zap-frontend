@@ -38,6 +38,42 @@
   }
 }
 
+[data-theme="light"] {
+  .transaction-detail-header {
+    .back-link {
+      color: var(--text-dark);
+      &:hover {
+        background-color: rgba(0,0,0,0.06);
+      }
+    }
+    .detail-title {
+      color: var(--text-dark);
+    }
+  }
+  .transaction-type-banner {
+    background: var(--surface-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    color: var(--text-dark);
+    
+    .transaction-type {
+      color: var(--text-dark);
+    }
+    .transaction-date {
+      color: rgba(0,0,0,0.6);
+    }
+  }
+  .transaction-detail-section {
+    background: var(--surface-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    color: var(--text-dark);
+    
+    .detail-label,
+    .detail-value {
+      color: var(--text-dark);
+    }
+  }
+}
+
 .transaction-detail-loading,
 .transaction-detail-error {
   display: flex;
@@ -179,5 +215,82 @@
     svg {
       font-size: 16px;
     }
+  }
+}
+
+.transaction-detail-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+  gap: 12px;
+  
+  .shimmer {
+    @extend .shimmer-base;
+  }
+}
+
+// Base shimmer styles to match account page
+.shimmer-base {
+  position: relative;
+  background: #252a37;
+  border-radius: 8px;
+  overflow: hidden;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.05) 20%,
+      rgba(255, 255, 255, 0.1) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+[data-theme="light"] {
+  .shimmer-base {
+    background: #e0e5f0;
+    
+    &::after {
+      background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.5) 20%,
+        rgba(255, 255, 255, 0.7) 60%,
+        rgba(255, 255, 255, 0)
+      );
+    }
+  }
+}
+
+.shimmer-card {
+  background: var(--surface-dark);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px var(--shadow-color-dark);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+[data-theme="light"] {
+  .shimmer-card {
+    background: var(--surface-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
   }
 } 
