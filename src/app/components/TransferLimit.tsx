@@ -1,7 +1,7 @@
 import { useTheme } from "../providers/ThemeProvider";
-import { Token, TokenLimit } from "../send/types";
+import { Token, TransferLimitResponse } from "../send/types";
 
-export function TransferLimit({ transferLimit, selectedToken }: { transferLimit: any, selectedToken: Partial<Token> | null }) {
+export function TransferLimit({ transferLimit, selectedToken }: { transferLimit: TransferLimitResponse | undefined, selectedToken: Partial<Token> | null }) {
   const { theme } = useTheme();
 
   return (
