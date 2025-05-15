@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import { MobileLayout } from "../components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BACKEND_URL } from "../util/constant";
+import { BACKEND_URL, ERC_20_CONTRACT_ADDRESS } from "../util/constant";
 import {
   type BaseError,
+  useReadContract,
   useSendTransaction,
   useWaitForTransactionReceipt,
   useWriteContract,
@@ -200,6 +201,11 @@ export default function SendPage() {
   const [isCopied, setIsCopied] = useState(false);
 
   const { data: ethHash, error: ethError, sendTransaction } = useSendTransaction();
+  const { data: decimal } = useReadContract({
+    address: ERC_20_CONTRACT_ADDRESS.USDT as AddressType,
+    abi: erc20Abi,
+    functionName: "decimals",
+  });
   const { data: tokenHash, error: tokenError, writeContract} = useWriteContract();
   const activeError = selectedToken?.id === "ethereum" ? ethError : tokenError;
 
@@ -360,12 +366,12 @@ export default function SendPage() {
         }
 
         return writeContract({
-          address: '0x2728DD8B45B788e26d12B13Db5A244e5403e7eda', // smart contract address, probably need to be changed since this can only handle usdt
+          address: ERC_20_CONTRACT_ADDRESS.USDT as AddressType,
           abi: erc20Abi,
           functionName: "transfer",
           args: [
             `${selectedToken?.addresses.testnet}` as AddressType,
-            parseUnits(amount, 2), // hardcoded for now, probably need to get the decimals for each token from backend
+            parseUnits(amount, decimal as number), 
           ],
         });
       })
