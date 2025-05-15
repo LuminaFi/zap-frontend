@@ -349,13 +349,6 @@ export default function SendPage() {
           functionName: 'decimals'
         });
 
-        await writeContract(config, {
-          address: `${selectedToken?.addresses.testnet}` as AddressType,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [ZAP_POOL, parseUnits(amount, decimal)],
-        });
-
         const result = await writeContract(config, {
           address: `${selectedToken?.addresses.testnet}` as AddressType,
           abi: erc20Abi,
