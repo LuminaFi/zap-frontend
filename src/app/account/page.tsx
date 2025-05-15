@@ -147,26 +147,9 @@ export default function AccountPage() {
   const limit = 5;
 
   const observer = useRef<IntersectionObserver | null>(null);
-  const lastTransactionElementRef = useCallback((node: HTMLDivElement) => {
-    if (isLoadingMore) return;
-
-    if (observer.current) observer.current.disconnect();
-
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMoreTransactions();
-      }
-    }, {
-      root: null,
-      rootMargin: '100px',
-      threshold: 0.1
-    });
-
-    if (node) observer.current.observe(node);
-  }, [isLoadingMore, hasMore, currentPage]);
   const { address: userAddress } = useAccount();
 
-  const buildQueryParams = (page: number) => {
+  const buildQueryParams = useCallback((page: number) => {
     const params = new URLSearchParams();
 
     params.append('page', page.toString());
@@ -187,7 +170,7 @@ export default function AccountPage() {
     }
 
     return params.toString();
-  };
+  }, [limit, direction, sort, startDate, endDate]);
 
   const loadMoreTransactions = useCallback(() => {
     if (!hasMore || isLoadingMore) return;
@@ -196,7 +179,25 @@ export default function AccountPage() {
 
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-  }, [hasMore, isLoadingMore, currentPage, limit]);
+  }, [hasMore, isLoadingMore, currentPage]);
+
+  const lastTransactionElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoadingMore) return;
+
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMoreTransactions();
+      }
+    }, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    });
+
+    if (node) observer.current.observe(node);
+  }, [isLoadingMore, hasMore, loadMoreTransactions]);
 
   const updateUrlParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -283,7 +284,7 @@ export default function AccountPage() {
         setIsLoading(false);
         return;
       }
-
+      
       const isInitialLoad = currentPage === 1;
 
       if (isInitialLoad) {
@@ -336,7 +337,7 @@ export default function AccountPage() {
     };
 
     fetchTransactions();
-  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger]);
+  }, [userAddress, currentPage, direction, sort, startDate, endDate, currentFilter, limit, refreshTrigger, buildQueryParams]);
 
   useEffect(() => {
     const fetchBalance = async () => {

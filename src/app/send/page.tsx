@@ -443,7 +443,7 @@ export default function SendPage() {
     if (sendData.amount) {
       setFormattedAmount(formatNumber(String(sendData.amount)));
     }
-  }, []);
+  }, [sendData.amount]);
 
   return (
     <MobileLayout title={t("send.title") || "Send"} showAvatar>
