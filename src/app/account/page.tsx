@@ -12,25 +12,43 @@ import { useLanguage } from '../providers/LanguageProvider';
 import { useAccount } from 'wagmi';
 import { useTheme } from '../providers/ThemeProvider';
 
-// Simple formatter for large numbers to K, M, B format
+
 const formatAbbreviatedNumber = (numStr: string): string => {
-  // Remove any non-numeric characters except dots
-  const num = parseFloat(numStr.replace(/[^\d.]/g, ''));
   
+  const num = parseFloat(numStr.replace(/[^\d.]/g, ''));
+
   if (isNaN(num)) return '0';
+
+  
+  if (num >= 1_000_000_000_000_000_000) {
+    return (num / 1_000_000_000_000_000_000).toFixed(2).replace(/\.00$/, '') + 'Qi';
+  }
+
+  
+  if (num >= 1_000_000_000_000_000) {
+    return (num / 1_000_000_000_000_000).toFixed(2).replace(/\.00$/, '') + 'Q';
+  }
+
+  
+  if (num >= 1_000_000_000_000) {
+    return (num / 1_000_000_000_000).toFixed(2).replace(/\.00$/, '') + 'T';
+  }
+
   
   if (num >= 1_000_000_000) {
     return (num / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B';
   }
+
   
   if (num >= 1_000_000) {
     return (num / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
   }
+
   
   if (num >= 1_000) {
     return (num / 1_000).toFixed(2).replace(/\.00$/, '') + 'K';
   }
-  
+
   return num.toString();
 };
 
@@ -284,7 +302,7 @@ export default function AccountPage() {
         setIsLoading(false);
         return;
       }
-      
+
       const isInitialLoad = currentPage === 1;
 
       if (isInitialLoad) {
@@ -311,6 +329,27 @@ export default function AccountPage() {
 
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
           const isSent = userAddress ? tx.from.toLowerCase() === userAddress.toLowerCase() : false;
+          
+          
+          let formattedDate = '';
+          try {
+            if (tx.formattedDate) {
+              formattedDate = tx.formattedDate;
+            } else if (tx.timestamp) {
+              const date = new Date(Number(tx.timestamp) * 1000);
+              formattedDate = date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+              });
+            }
+          } catch (error) {
+            console.error('Error formatting date:', error);
+            formattedDate = 'Unknown date';
+          }
 
           return {
             id: tx.hash,
@@ -318,7 +357,7 @@ export default function AccountPage() {
             token: tx.token || 'IDRX',
             amount: tx.valueInEther || tx.value,
             type: isSent ? 'sent' : 'received',
-            date: tx.formattedDate || new Date(Number(tx.timestamp) * 1000).toLocaleDateString()
+            date: formattedDate
           };
         });
 
@@ -415,7 +454,7 @@ export default function AccountPage() {
             {isBalanceLoading ? (
               <div className="shimmer" style={{ height: '36px', width: '180px' }}></div>
             ) : (
-              balance.startsWith('Rp') ? 
+              balance.startsWith('Rp') ?
                 `${balance.substring(0, 3)} ${formatAbbreviatedNumber(balance.substring(3).trim())}` :
                 `${formatAbbreviatedNumber(balance)}`
             )}

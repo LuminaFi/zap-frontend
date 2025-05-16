@@ -32,14 +32,28 @@ export const Transaction: React.FC<TransactionProps> = ({
     if (!dateString) return '';
 
     try {
-      const date = new Date(dateString);
-      return date.toLocaleString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
+      
+      let date;
+      
+      if (/^\d+$/.test(dateString)) {
+        date = new Date(Number(dateString) * 1000);
+      } else {
+        date = new Date(dateString);
+      }
+      
+      
+      if (isNaN(date.getTime())) {
+        return dateString;
+      }
+      
+      
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: true
       });
     } catch {
       return dateString;
