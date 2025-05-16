@@ -1,127 +1,20 @@
 "use client";
 
-import { MobileLayout } from '../components/MobileLayout';
-import { Transaction } from '../components/Transaction';
-import { TransactionSkeleton } from '../components/TransactionSkeleton';
+import { MobileLayout } from '@/components/MobileLayout';
+import { Transaction } from '@/components/Transaction';
+import { TransactionSkeleton } from '@/components/TransactionSkeleton';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from '../components/Button';
-import { Modal } from '../components/Modal';
+import { Button } from '@/components/Button';
+import { Modal } from '@/components/Modal';
 import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw, FiInbox } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
-import { useLanguage } from '../providers/LanguageProvider';
-import { useTheme } from '../providers/ThemeProvider';
+import { useLanguage } from '@/providers/LanguageProvider';
+import { useTheme } from '@/providers/ThemeProvider';
 import React from 'react';
-
-const formatAbbreviatedNumber = (numStr: string): string => {
-  if (!numStr) return 'Rp0';
-
-  // Remove all characters except digits and decimal point
-  const cleanedStr = numStr.replace(/[^\d.]/g, '');
-  const parts = cleanedStr.split('.');
-  const integerPart = parts[0];
-
-  // If number is 20 digits or more, use abbreviated format
-  if (integerPart.length >= 20) {
-    const firstDigits = integerPart.substring(0, 4);
-    const formatted = `${firstDigits.substring(0, 2)}.${firstDigits.substring(2, 4)}`;
-
-    if (integerPart.length >= 30) return `Rp${formatted} Quint.`;
-    if (integerPart.length >= 27) return `Rp${formatted} Quad.`;
-    if (integerPart.length >= 24) return `Rp${formatted} Tril.`;
-    if (integerPart.length >= 21) return `Rp${formatted} Bil.`;
-
-    return `Rp${formatted} Mil.`;
-  }
-
-  // Parse as float to preserve decimal values
-  const number = parseFloat(cleanedStr);
-
-  // If the number is very small but not zero, show it with decimal places
-  if (number > 0 && number < 1) {
-    return `Rp${number.toFixed(4)}`;
-  }
-
-  // For zero values, explicitly check to avoid displaying Rp0 for small non-zero values
-  if (number === 0) {
-    return 'Rp0';
-  }
-
-  // For regular numbers, use locale formatting
-  return number.toLocaleString('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0
-  });
-};
-
-
-interface ApiTransaction {
-  id: string;
-  hash: string;
-  from: string;
-  to: string;
-  value: string;
-  valueInEther?: string;
-  timestamp: string | number;
-  formattedDate?: string;
-  status?: string;
-  gasUsed?: string;
-  gasPrice?: string;
-  blockNumber: number;
-  isContractInteraction?: boolean;
-  functionName?: string | null;
-  methodId?: string | null;
-  token: string;
-  valueInIDR?: string;
-}
-
-interface TransactionData {
-  id: string;
-  txAddress: string;
-  token: string;
-  amount: string;
-  type: 'received' | 'sent';
-  date: string;
-  hash: string;
-  valueInIDR: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  address: string;
-  transactions: ApiTransaction[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  };
-  summary: {
-    totalTransactions: number;
-    sentTransactions: number;
-    receivedTransactions: number;
-    totalSent: string;
-    totalReceived: string;
-    lastTransaction: string | null;
-  };
-  error?: string;
-}
-
-type FilterType = 'all' | 'sent' | 'received';
-type DirectionType = 'all' | 'from' | 'to';
-type SortType = 'asc' | 'desc';
-
-const getFilterDisplayText = (
-  direction: DirectionType,
-  hasDateFilter: boolean
-) => {
-  if (direction !== 'all' || hasDateFilter) {
-    if (direction === 'from') return 'From Me';
-    if (direction === 'to') return 'To Me';
-    return 'Custom';
-  }
-  return 'All';
-};
+import { DirectionType, FilterType, SortType, TransactionData } from './types';
+import { formatAbbreviatedNumber } from '@/utils/formatNumber';
+import { getFilterDisplayText } from '@/utils/getFilterDisplayText';
+import { getBalance, getTransaction } from './apiRequest';
 
 export default function AccountPage() {
   const { t } = useLanguage();
@@ -157,6 +50,23 @@ export default function AccountPage() {
   const [tempStartDate, setTempStartDate] = useState<string>(startDate);
   const [tempEndDate, setTempEndDate] = useState<string>(endDate);
 
+  const hasDateFilter = !!(startDate || endDate);
+  const hasActiveFilters = direction !== 'all' || hasDateFilter;
+  const filterDisplayText = getFilterDisplayText(direction, hasDateFilter);
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const limit = 5;
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
+
   useEffect(() => {
     if (showFilterModal) {
       setTempDirection(direction);
@@ -166,12 +76,6 @@ export default function AccountPage() {
     }
   }, [showFilterModal, direction, sort, startDate, endDate]);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const limit = 5;
-
-  const observer = useRef<IntersectionObserver | null>(null);
-  const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
   const buildQueryParams = useCallback((page: number) => {
     const params = new URLSearchParams();
 
@@ -277,16 +181,6 @@ export default function AccountPage() {
     window.history.replaceState({}, '', window.location.pathname);
   };
 
-  const hasDateFilter = !!(startDate || endDate);
-  const hasActiveFilters = direction !== 'all' || hasDateFilter;
-  const filterDisplayText = getFilterDisplayText(direction, hasDateFilter);
-
-  const today = new Date().toISOString().split('T')[0];
-
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
   const handleRefreshData = () => {
     setIsRefreshing(true);
 
@@ -318,18 +212,8 @@ export default function AccountPage() {
 
       try {
         const queryParams = buildQueryParams(currentPage);
-        const response = await fetch(`https://zap-service-jkce.onrender.com/api/transactions/${userAddress}?${queryParams}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch transactions: ${response.status}`);
-        }
-
-        const data: ApiResponse = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch transactions');
-        }
-
+        
+        const data = await getTransaction(userAddress, queryParams);
         setHasMore(data.pagination.hasMore);
 
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
@@ -400,13 +284,7 @@ export default function AccountPage() {
       setIsBalanceLoading(true);
 
       try {
-        const response = await fetch(`https://zap-service-jkce.onrender.com/api/idrx-balance/${userAddress}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch balance: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await getBalance(userAddress);
 
         if (data.success) {
           setBalance(data.formattedBalance || 'Rp 0');

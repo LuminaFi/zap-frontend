@@ -1,8 +1,8 @@
-import { Web3Provider } from './util/provider';
-import './styles/globals.scss';
+import { Web3Provider } from '@/providers/Web3Provider';
+import '@/styles/globals.scss';
 import { Inter } from 'next/font/google';
-import { ThemeProvider } from './providers/ThemeProvider';
-import { LanguageProvider } from './providers/LanguageProvider';
+import { ThemeProvider } from '@/providers/ThemeProvider';
+import { LanguageProvider } from '@/providers/LanguageProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 

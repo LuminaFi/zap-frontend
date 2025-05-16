@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { MobileLayout } from "../components/MobileLayout";
-import { Button } from "../components/Button";
+import { MobileLayout } from "@/components/MobileLayout";
+import { Button } from "@/components/Button";
 import { QRCode } from "react-qrcode-logo";
-import { FormField } from "../components/FormField";
-import { TransferLimit } from "../components/TransferLimit";
+import { FormField } from "@/components/FormField";
+import { TransferLimit } from "@/components/TransferLimit";
 import { useQuery } from "@tanstack/react-query";
-import { TransferLimitResponse } from "../send/types";
-import { getTransferLimit } from "../util/getTransferLimit";
-import { formatNumber } from "../util/formatNumber";
+import { TransferLimitResponse } from "@/app/send/types";
+import { getTransferLimit } from "@/utils/getTransferLimit";
+import { formatNumber } from "@/utils/formatNumber";
 import { useAccount } from "wagmi";
+import { idrxTokenMetadata } from "@/utils/constant";
 
 export default function ReceivePage() {
   const { address } = useAccount();
@@ -19,16 +20,12 @@ export default function ReceivePage() {
   const [amount, setAmount] = useState<number>(0);
   const [formattedAmount, setFormattedAmount] = useState("");
   const [isValidAmount, setIsValidAmount] = useState(false);
-  
-  const selectedToken = {
-    symbol: "IDRX",
-  }
 
   const {
     data: limitData,
     isLoading: isLoadingLimit,
   } = useQuery<TransferLimitResponse>({
-    queryKey: [`limit-${selectedToken?.symbol}`],
+    queryKey: [`limit-${idrxTokenMetadata.symbol}`],
     queryFn: () => getTransferLimit(),
   });
 
@@ -40,7 +37,6 @@ export default function ReceivePage() {
     
     setAmount(newAmount || 0);
     
-    // Update the formatted display value
     if (value.includes(".")) {
       setFormattedAmount(value);
     } else {
@@ -104,7 +100,7 @@ export default function ReceivePage() {
                 value={formattedAmount}
                 onChange={handleAmountChange}
               />
-              <TransferLimit transferLimit={limitData} selectedToken={selectedToken} />
+              <TransferLimit transferLimit={limitData} selectedToken={idrxTokenMetadata} />
             </div>
 
             <Button 

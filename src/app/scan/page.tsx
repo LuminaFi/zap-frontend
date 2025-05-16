@@ -3,26 +3,10 @@
 import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MobileLayout } from "../components/MobileLayout";
+import { MobileLayout } from "@/components/MobileLayout";
 import { BiQrScan } from 'react-icons/bi';
-
-type QRResult = {
-  address?: string;
-  amount?: number;
-};
-
-const basicEthAddressRegex = /^0x[a-fA-F0-9]{40}$/;
-
-const isValidEthereumAddress = (address: string) => {
-  if (!basicEthAddressRegex.test(address)) {
-    return false;
-  }
-
-  if (/[a-f]/.test(address) && /[A-F]/.test(address)) {
-  }
-
-  return true;
-};
+import { QRResult } from "./types";
+import { isValidWalletAddress } from "@/utils/isValidWalletAddress";
 
 const updateBorder = () => {
   const svgElement = document.querySelector("svg") as SVGSVGElement;
@@ -55,8 +39,7 @@ export default function ScanQRPage() {
 
   const handleScan = (result: IDetectedBarcode[]) => {
     const qrRes = JSON.parse(result[result.length - 1].rawValue) as QRResult;
-    console.log(qrRes, 'line 58');
-    if (isValidEthereumAddress(qrRes?.address ?? "")) {
+    if (isValidWalletAddress(qrRes?.address ?? "")) {
       router.push(
         `/send?address=${qrRes?.address}${qrRes?.amount ? `&amount=${qrRes?.amount}` : ""
         }`

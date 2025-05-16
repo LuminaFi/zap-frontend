@@ -1,4 +1,4 @@
-import { Token, TransferLimitResponse } from "../send/types";
+import { Token, TransferLimitResponse } from "../app/send/types";
 import { BACKEND_URL } from "./constant";
 
 export const getTransferLimit = async (token?: Token | null): Promise<TransferLimitResponse> => {

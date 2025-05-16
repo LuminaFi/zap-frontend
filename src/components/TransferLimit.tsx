@@ -1,5 +1,5 @@
-import { useTheme } from "../providers/ThemeProvider";
-import { Token } from "../send/types";
+import { useTheme } from "@/providers/ThemeProvider";
+import { Token } from "@/app/send/types";
 
 export interface TransferLimitData {
   tokenLimits?: {

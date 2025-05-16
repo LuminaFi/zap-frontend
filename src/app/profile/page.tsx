@@ -1,29 +1,20 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { MobileLayout } from '../components/MobileLayout';
-import { FormField } from '../components/FormField';
-import { Button } from '../components/Button';
-import { ThemeToggle } from '../components/ThemeToggle';
-import { LanguageToggle } from '../components/LanguageToggle';
-import { useLanguage } from '../providers/LanguageProvider';
+import { MobileLayout } from '@/components/MobileLayout';
+import { FormField } from '@/components/FormField';
+import { Button } from '@/components/Button';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { useLanguage } from '@/providers/LanguageProvider';
 import { useDisconnect, useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { FiSettings, FiUser, FiShield, FiCreditCard, FiLogOut, FiEdit } from 'react-icons/fi';
-import { useTheme } from '../providers/ThemeProvider';
-import { Modal } from '../components/Modal';
+import { useTheme } from '@/providers/ThemeProvider';
+import { Modal } from '@/components/Modal';
+import { maskAddress } from '@/utils/maskAddress';
+import { getInitials } from '@/utils/getInitials';
 
-const truncateAddress = (address?: string) => {
-  if (!address) return '';
-  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-};
-
-const getInitials = (name: string) => {
-  if (!name) return '';
-  const parts = name.trim().split(' ');
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-};
 
 const copyAnimationStyles = `
   @keyframes fadeIn {
@@ -177,7 +168,7 @@ export default function ProfilePage() {
             <div className="profile-info">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 className="profile-name">
-                  {displayName || truncateAddress(address)}
+                  {displayName || maskAddress(address)}
                 </h2>
                 <button
                   onClick={openEditNameModal}
@@ -194,7 +185,7 @@ export default function ProfilePage() {
                   <FiEdit size={16} />
                 </button>
               </div>
-              <p className="profile-wallet">{truncateAddress(address)}</p>
+              <p className="profile-wallet">{maskAddress(address)}</p>
             </div>
           </div>
         </div>
@@ -229,7 +220,7 @@ export default function ProfilePage() {
                   wordBreak: 'break-all',
                   fontSize: '14px'
                 }}>
-                  {address ? truncateAddress(address) : 'No wallet connected'}
+                  {address ? maskAddress(address) : 'No wallet connected'}
                 </p>
               </div>
 
