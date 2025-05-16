@@ -89,3 +89,23 @@ export type TransferIDRXResponse = {
   amount: string;
   transactionHash: string;
 };
+
+export interface Network {
+  id: string;
+  name: string;
+  logoUrl: string;
+  testnetChainId: string;
+  mainnetChainId: string;
+}
+
+export interface TokenPrice {
+  success: boolean;
+  token: string;
+  tokenSymbol: "USDT";
+  priceUsd: number;
+  priceIdr: number;
+  timestamp: number;
+  logoUrl: string;
+  priceIdrFormatted: string;
+  priceUsdFormatted: string;
+}

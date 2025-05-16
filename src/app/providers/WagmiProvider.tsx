@@ -1,16 +1,8 @@
 "use client";
 
-import { WagmiProvider, createConfig, http } from 'wagmi';
-import { sepolia, mainnet } from 'wagmi/chains';
+import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const config = createConfig({
-  chains: [sepolia, mainnet],
-  transports: {
-    [sepolia.id]: http(),
-    [mainnet.id]: http(),
-  },
-});
+import { config } from '../util/wagmiConfig';
 
 const queryClient = new QueryClient();
 

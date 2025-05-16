@@ -3,22 +3,17 @@
 import { useEffect, useState, useRef } from "react";
 import { MobileLayout } from "../components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BACKEND_URL, ERC_20_CONTRACT_ADDRESS } from "../util/constant";
-import {
-  type BaseError,
-  useReadContract,
-  useSendTransaction,
-  useWaitForTransactionReceipt,
-  useWriteContract,
-} from "wagmi";
-import { erc20Abi, parseEther, parseUnits } from "viem";
+import { BACKEND_URL, ZAP_POOL } from "../util/constant";
+import { erc20Abi, parseUnits } from "viem";
 import { DefaultError, useMutation, useQuery } from "@tanstack/react-query";
 import type {
   AddressType,
   calculateAmountResponse,
+  Network,
   QRTypes,
   SendData,
   Token,
+  TokenPrice,
   TransferFeeResponse,
   TransferIDRXPayload,
   TransferIDRXResponse,
@@ -32,6 +27,10 @@ import Image from "next/image";
 import { TransferLimit } from "../components/TransferLimit";
 import { getTransferLimit } from "../util/getTransferLimit";
 import { formatNumber } from "../util/formatNumber";
+import { readContract, writeContract } from "@wagmi/core";
+import { config } from "../configs/xellarConfig";
+import { useConnections } from "wagmi";
+import { sepolia } from "viem/chains";
 
 const copyAnimationStyles = `
   @keyframes fadeIn {
@@ -75,12 +74,6 @@ const copyAnimationStyles = `
     -moz-appearance: textfield;
   }
 `;
-
-interface Network {
-  id: string;
-  name: string;
-  logoUrl: string;
-}
 
 const transfer = async ({
   recipientAddress,
@@ -137,6 +130,28 @@ const getSupportedNetworks = async (): Promise<Network[]> => {
   } catch (error) {
     console.error('Error fetching networks:', error);
     return [];
+  }
+};
+
+const getTokenPrice = async (token: string): Promise<TokenPrice> => {
+  try {
+    const response = await fetch(`https://zap-service-jkce.onrender.com/api/token-price/${token}`, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch token price: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data
+  } catch (error) {
+    console.error('Error fetching networks:', error);
+    throw error;
   }
 };
 
@@ -200,20 +215,13 @@ export default function SendPage() {
   
   const [isCopied, setIsCopied] = useState(false);
 
-  const { data: ethHash, error: ethError, sendTransaction } = useSendTransaction();
-  const { data: decimal } = useReadContract({
-    address: ERC_20_CONTRACT_ADDRESS.USDT as AddressType,
-    abi: erc20Abi,
-    functionName: "decimals",
-  });
-  const { data: tokenHash, error: tokenError, writeContract} = useWriteContract();
-  const activeError = selectedToken?.id === "ethereum" ? ethError : tokenError;
+  // const { data: tokenHash, error: tokenError, writeContract} = useWriteContract();
 
-  const {
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-    isError: isErrorTrf,
-  } = useWaitForTransactionReceipt({ hash: selectedToken?.id === "ethereum" ? ethHash : tokenHash });
+  // const {
+  //   isLoading: isConfirming,
+  //   isSuccess: isConfirmed,
+  //   isError: isErrorTrf,
+  // } = useWaitForTransactionReceipt({ hash: tokenHash });
   const { mutate: transferIDRX, isPending: isLoadingTrf } = useMutation<
     TransferIDRXResponse,
     DefaultError,
@@ -285,20 +293,20 @@ export default function SendPage() {
     }
   }, [search]);
 
-  useEffect(() => {
-    if (isConfirmed && !isErrorTrf) {
-      transferIDRX({
-        recipientAddress: sendData.address!,
-        idrxAmount: sendData.amount!,
-      });
-    }
-  }, [
-    isConfirmed,
-    sendData.address,
-    sendData.amount,
-    transferIDRX,
-    isErrorTrf,
-  ]);
+  // useEffect(() => {
+  //   if (isConfirmed && !isErrorTrf) {
+  //     transferIDRX({
+  //       recipientAddress: sendData.address!,
+  //       idrxAmount: sendData.amount!,
+  //     });
+  //   }
+  // }, [
+  //   isConfirmed,
+  //   sendData.address,
+  //   sendData.amount,
+  //   transferIDRX,
+  //   isErrorTrf,
+  // ]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -357,22 +365,25 @@ export default function SendPage() {
     setIsSubmitting(true);
 
     calculateAmount(sendData.amount!)
-      .then((amount) => {
-        if (selectedToken?.id === "ethereum") {
-          return sendTransaction({
-            to: `${selectedToken.addresses.testnet}` as AddressType,
-            value: parseEther(amount),
-          });
-        }
+      .then(async (amount) => {
+        const decimal = await readContract(config, {
+          address: `${selectedToken?.addresses.testnet}` as AddressType,
+          abi: erc20Abi,
+          functionName: "decimals",
+        });
 
-        return writeContract({
-          address: ERC_20_CONTRACT_ADDRESS.USDT as AddressType,
+        const result = await writeContract(config, {
+          address: `${selectedToken?.addresses.testnet}` as AddressType,
           abi: erc20Abi,
           functionName: "transfer",
-          args: [
-            `${selectedToken?.addresses.testnet}` as AddressType,
-            parseUnits(amount, decimal as number), 
-          ],
+          args: [ZAP_POOL, parseUnits(amount, decimal)],
+        });
+
+        const tokenPrice = await getTokenPrice(selectedToken?.symbol!);
+
+        transferIDRX({
+          recipientAddress: sendData.address!,
+          idrxAmount: Math.round(tokenPrice.priceIdr * Number(amount)),
         });
       })
       .catch((error) => {
@@ -450,7 +461,7 @@ export default function SendPage() {
       <style jsx global>{copyAnimationStyles}</style>
       
       <div className={`send-container ${theme}`}>
-        {isLoadingTrf || isConfirming || isLoadingLimit ? (
+        {isLoadingTrf || isLoadingLimit ? (
           <div
             className="loading-spinner"
             style={{ alignSelf: "center" }}
@@ -927,29 +938,27 @@ export default function SendPage() {
               </>
             )}
 
-            {activeError && (
+            {/* {tokenError && (
               <div className={`error-message ${theme}`}>
-                {(activeError as BaseError).shortMessage || activeError.message}
+                {(tokenError as BaseError).shortMessage || tokenError.message}
               </div>
-            )}
+            )} */}
 
             <Button
               type="submit"
               variant="primary"
               size="large"
               fullWidth
-              disabled={isConfirming || isSubmitting || !selectedNetwork || networks.length === 0 || !selectedToken || !selectedToken.addresses.testnet || !isValidAmount}
+              disabled={isSubmitting || !selectedNetwork || networks.length === 0 || !selectedToken || !selectedToken.addresses.testnet || !isValidAmount}
               className="send-button"
             >
-              {isConfirming
-                ? t("send.processing") || "Processing..."
-                : networks.length === 0
+              { networks.length === 0
                   ? "No Networks Available"
                   : !selectedToken
                     ? "Select a token to continue"
                     : !selectedToken.addresses.testnet
                       ? "Selected token not supported on testnet"
-                      : t("send.sendButton") || "Send"}
+                      : t("send.sendButton") || "Send" }
             </Button>
           </form>
         )}
