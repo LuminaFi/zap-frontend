@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MobileLayout } from '../components/MobileLayout';
 import { FormField } from '../components/FormField';
 import { Button } from '../components/Button';
@@ -9,14 +9,20 @@ import { LanguageToggle } from '../components/LanguageToggle';
 import { useLanguage } from '../providers/LanguageProvider';
 import { useDisconnect, useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
-import { FiSettings, FiUser, FiShield, FiCreditCard, FiLogOut } from 'react-icons/fi';
+import { FiSettings, FiUser, FiShield, FiCreditCard, FiLogOut, FiEdit } from 'react-icons/fi';
 import { useTheme } from '../providers/ThemeProvider';
 import { Modal } from '../components/Modal';
 
-// Helper function to truncate Ethereum addresses
 const truncateAddress = (address?: string) => {
   if (!address) return '';
   return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+};
+
+const getInitials = (name: string) => {
+  if (!name) return '';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
 const copyAnimationStyles = `
@@ -58,6 +64,9 @@ export default function ProfilePage() {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isEditNameModalOpen, setIsEditNameModalOpen] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
   const [withdrawForm, setWithdrawForm] = useState({
     bankName: '',
     accountNumber: '',
@@ -66,6 +75,15 @@ export default function ProfilePage() {
   });
   const [formattedAmount, setFormattedAmount] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedName = localStorage.getItem(`displayName_${address}`);
+      if (savedName) {
+        setDisplayName(savedName);
+      }
+    }
+  }, [address]);
 
   const handleRemoveWallet = () => {
     disconnect();
@@ -80,11 +98,30 @@ export default function ProfilePage() {
     setIsWithdrawModalOpen(false);
   }
 
+  const openEditNameModal = () => {
+    setNewDisplayName(displayName);
+    setIsEditNameModalOpen(true);
+  }
+
+  const closeEditNameModal = () => {
+    setIsEditNameModalOpen(false);
+  }
+
+  const saveDisplayName = () => {
+    if (newDisplayName.trim() && address) {
+      window.location.reload();
+      setDisplayName(newDisplayName.trim());
+      localStorage.setItem(`displayName_${address}`, newDisplayName.trim());
+      closeEditNameModal();
+
+    }
+  }
+
   const handleCopyAddress = () => {
     if (address) {
       navigator.clipboard.writeText(address);
       setIsCopied(true);
-      
+
       setTimeout(() => {
         setIsCopied(false);
       }, 2000);
@@ -93,7 +130,7 @@ export default function ProfilePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'amount') {
       const numericValue = value.replace(/[^\d]/g, '');
       if (numericValue === '') {
@@ -120,10 +157,10 @@ export default function ProfilePage() {
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     console.log('Withdraw request:', withdrawForm);
-    
-   
+
+
     alert('Withdrawal request submitted successfully!');
     closeWithdrawModal();
   }
@@ -134,9 +171,29 @@ export default function ProfilePage() {
       <div className="profile-container">
         <div className="profile-section">
           <div className="profile-header">
-            <div className="profile-avatar">JK</div>
+            <div className="profile-avatar" style={{ backgroundColor: '#FFD700 !important', background: '#FFD700 !important' }}>
+              {displayName ? getInitials(displayName) : address ? address.substring(2, 4).toUpperCase() : ''}
+            </div>
             <div className="profile-info">
-              <h2 className="profile-name">John Kusuma</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 className="profile-name">
+                  {displayName || truncateAddress(address)}
+                </h2>
+                <button
+                  onClick={openEditNameModal}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px',
+                  }}
+                >
+                  <FiEdit size={16} />
+                </button>
+              </div>
               <p className="profile-wallet">{truncateAddress(address)}</p>
             </div>
           </div>
@@ -151,7 +208,7 @@ export default function ProfilePage() {
             <label className="field-label">
               {t('profile.walletAddress') || 'Wallet Address'}
             </label>
-            <div className={`address-display ${theme}`} style={{ 
+            <div className={`address-display ${theme}`} style={{
               padding: '12px 14px',
               backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
               borderRadius: '8px',
@@ -165,8 +222,8 @@ export default function ProfilePage() {
               position: 'relative'
             }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <p className="address-text" style={{ 
-                  fontFamily: 'monospace', 
+                <p className="address-text" style={{
+                  fontFamily: 'monospace',
                   fontWeight: '500',
                   overflowWrap: 'break-word',
                   wordBreak: 'break-all',
@@ -175,10 +232,10 @@ export default function ProfilePage() {
                   {address ? truncateAddress(address) : 'No wallet connected'}
                 </p>
               </div>
-              
+
               <div style={{ position: 'relative' }}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleCopyAddress}
                   style={{
                     background: 'none',
@@ -195,7 +252,7 @@ export default function ProfilePage() {
                 >
                   {isCopied ? 'Copied!' : 'Copy'}
                 </button>
-                
+
                 {isCopied && (
                   <div className={`copy-notification ${theme}`}>
                     Copied!
@@ -204,7 +261,7 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-          
+
           <FormField
             label={t('profile.balance') || 'Balance'}
             type="text"
@@ -218,8 +275,8 @@ export default function ProfilePage() {
             <FiCreditCard className="section-icon" />
             {t('profile.transactions') || 'Transactions'}
           </h3>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={openWithdrawModal}
             fullWidth
             style={{ marginBottom: '12px' }}
@@ -254,7 +311,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Withdraw Modal */}
-      <Modal 
+      <Modal
         isOpen={isWithdrawModalOpen}
         onClose={closeWithdrawModal}
         title={t('profile.withdrawToBank') || "Withdraw to Bank Account"}
@@ -274,7 +331,7 @@ export default function ProfilePage() {
               placeholder="Enter bank name"
             />
           </div>
-          
+
           <div style={{ marginBottom: '16px' }}>
             <label className="form-label">
               {t('profile.accountNumber') || "Account Number"}
@@ -289,7 +346,7 @@ export default function ProfilePage() {
               placeholder="Enter account number"
             />
           </div>
-          
+
           <div style={{ marginBottom: '16px' }}>
             <label className="form-label">
               {t('profile.accountName') || "Account Holder Name"}
@@ -304,7 +361,7 @@ export default function ProfilePage() {
               placeholder="Enter account holder name"
             />
           </div>
-          
+
           <div style={{ marginBottom: '20px' }}>
             <label className="form-label">
               {t('profile.amount') || "Amount"}
@@ -325,23 +382,59 @@ export default function ProfilePage() {
               />
             </div>
           </div>
-          
+
           <div className="form-actions">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="secondary"
               onClick={closeWithdrawModal}
             >
               {t('profile.cancel') || "Cancel"}
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               variant="primary"
             >
               {t('profile.withdraw') || "Withdraw"}
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isEditNameModalOpen}
+        onClose={closeEditNameModal}
+        title={t('profile.editName') || "Edit Display Name"}
+      >
+        <div style={{ marginBottom: '16px' }}>
+          <label className="form-label">
+            {t('profile.displayName') || "Display Name"}
+          </label>
+          <input
+            type="text"
+            value={newDisplayName}
+            onChange={(e) => setNewDisplayName(e.target.value)}
+            className="form-input"
+            placeholder="Enter your name"
+          />
+        </div>
+
+        <div className="form-actions">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={closeEditNameModal}
+          >
+            {t('profile.cancel') || "Cancel"}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={saveDisplayName}
+          >
+            {t('profile.save') || "Save"}
+          </Button>
+        </div>
       </Modal>
     </MobileLayout>
   );

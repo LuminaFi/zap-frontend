@@ -81,6 +81,9 @@ const en = {
   'profile.amount': 'Amount',
   'profile.cancel': 'Cancel',
   'profile.withdraw': 'Withdraw',
+  'profile.editName': 'Edit Display Name',
+  'profile.displayName': 'Display Name',
+  'profile.save': 'Save',
 
   'send.recipientAddress': 'Recipient Address',
   'send.amount': 'Amount',
@@ -156,6 +159,9 @@ const id = {
   'profile.amount': 'Jumlah',
   'profile.cancel': 'Batal',
   'profile.withdraw': 'Tarik',
+  'profile.editName': 'Edit Nama Tampilan',
+  'profile.displayName': 'Nama Tampilan',
+  'profile.save': 'Simpan',
 
   'send.recipientAddress': 'Alamat Penerima',
   'send.amount': 'Jumlah',

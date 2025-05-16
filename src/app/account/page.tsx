@@ -9,48 +9,51 @@ import { Modal } from '../components/Modal';
 import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw, FiInbox } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '../providers/LanguageProvider';
-import { useAccount } from 'wagmi';
 import { useTheme } from '../providers/ThemeProvider';
-
+import React from 'react';
 
 const formatAbbreviatedNumber = (numStr: string): string => {
-  
-  const num = parseFloat(numStr.replace(/[^\d.]/g, ''));
+  if (!numStr) return 'Rp0';
 
-  if (isNaN(num)) return '0';
+  // Remove all characters except digits and decimal point
+  const cleanedStr = numStr.replace(/[^\d.]/g, '');
+  const parts = cleanedStr.split('.');
+  const integerPart = parts[0];
 
-  
-  if (num >= 1_000_000_000_000_000_000) {
-    return (num / 1_000_000_000_000_000_000).toFixed(2).replace(/\.00$/, '') + 'Qi';
+  // If number is 20 digits or more, use abbreviated format
+  if (integerPart.length >= 20) {
+    const firstDigits = integerPart.substring(0, 4);
+    const formatted = `${firstDigits.substring(0, 2)}.${firstDigits.substring(2, 4)}`;
+
+    if (integerPart.length >= 30) return `Rp${formatted} Quint.`;
+    if (integerPart.length >= 27) return `Rp${formatted} Quad.`;
+    if (integerPart.length >= 24) return `Rp${formatted} Tril.`;
+    if (integerPart.length >= 21) return `Rp${formatted} Bil.`;
+
+    return `Rp${formatted} Mil.`;
   }
 
-  
-  if (num >= 1_000_000_000_000_000) {
-    return (num / 1_000_000_000_000_000).toFixed(2).replace(/\.00$/, '') + 'Q';
+  // Parse as float to preserve decimal values
+  const number = parseFloat(cleanedStr);
+
+  // If the number is very small but not zero, show it with decimal places
+  if (number > 0 && number < 1) {
+    return `Rp${number.toFixed(4)}`;
   }
 
-  
-  if (num >= 1_000_000_000_000) {
-    return (num / 1_000_000_000_000).toFixed(2).replace(/\.00$/, '') + 'T';
+  // For zero values, explicitly check to avoid displaying Rp0 for small non-zero values
+  if (number === 0) {
+    return 'Rp0';
   }
 
-  
-  if (num >= 1_000_000_000) {
-    return (num / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B';
-  }
-
-  
-  if (num >= 1_000_000) {
-    return (num / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
-  }
-
-  
-  if (num >= 1_000) {
-    return (num / 1_000).toFixed(2).replace(/\.00$/, '') + 'K';
-  }
-
-  return num.toString();
+  // For regular numbers, use locale formatting
+  return number.toLocaleString('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  });
 };
+
 
 interface ApiTransaction {
   id: string;
@@ -69,6 +72,7 @@ interface ApiTransaction {
   functionName?: string | null;
   methodId?: string | null;
   token: string;
+  valueInIDR?: string;
 }
 
 interface TransactionData {
@@ -78,6 +82,8 @@ interface TransactionData {
   amount: string;
   type: 'received' | 'sent';
   date: string;
+  hash: string;
+  valueInIDR: string;
 }
 
 interface ApiResponse {
@@ -134,7 +140,7 @@ export default function AccountPage() {
   const [showFilterModal, setShowFilterModal] = useState(false);
 
   const [direction, setDirection] = useState<DirectionType>(
-    (searchParams.get('direction') as DirectionType) || 'all'
+    (searchParams.get('direction') as DirectionType) || 'to'
   );
   const [sort, setSort] = useState<SortType>(
     (searchParams.get('sort') as SortType) || 'desc'
@@ -165,8 +171,7 @@ export default function AccountPage() {
   const limit = 5;
 
   const observer = useRef<IntersectionObserver | null>(null);
-  const { address: userAddress } = useAccount();
-
+  const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
   const buildQueryParams = useCallback((page: number) => {
     const params = new URLSearchParams();
 
@@ -329,8 +334,7 @@ export default function AccountPage() {
 
         const mappedTransactions: TransactionData[] = data.transactions.map(tx => {
           const isSent = userAddress ? tx.from.toLowerCase() === userAddress.toLowerCase() : false;
-          
-          
+
           let formattedDate = '';
           try {
             if (tx.formattedDate) {
@@ -351,13 +355,20 @@ export default function AccountPage() {
             formattedDate = 'Unknown date';
           }
 
+          // Format the IDR value using valueInIDR if available
+          const valueInIDR = tx.valueInIDR
+            ? formatAbbreviatedNumber(tx.valueInIDR)
+            : formatAbbreviatedNumber(tx.valueInEther || tx.value);
+
           return {
             id: tx.hash,
             txAddress: isSent ? tx.to : tx.from,
             token: tx.token || 'IDRX',
-            amount: tx.valueInEther || tx.value,
+            amount: valueInIDR,
             type: isSent ? 'sent' : 'received',
-            date: formattedDate
+            date: formattedDate,
+            hash: tx.hash,
+            valueInIDR: valueInIDR
           };
         });
 
@@ -398,7 +409,7 @@ export default function AccountPage() {
         const data = await response.json();
 
         if (data.success) {
-          setBalance(data.idrBalanceFormatted || 'Rp 0');
+          setBalance(data.formattedBalance || 'Rp 0');
         } else {
           console.error('Failed to fetch balance:', data.error);
           setBalance('Rp 0');
@@ -443,7 +454,6 @@ export default function AccountPage() {
                   border: 'none',
                   outline: 'none',
                   position: 'relative',
-                  zIndex: 10
                 }}
               >
                 <FiRefreshCw size={18} />
@@ -454,9 +464,7 @@ export default function AccountPage() {
             {isBalanceLoading ? (
               <div className="shimmer" style={{ height: '36px', width: '180px' }}></div>
             ) : (
-              balance.startsWith('Rp') ?
-                `${balance.substring(0, 3)} ${formatAbbreviatedNumber(balance.substring(3).trim())}` :
-                `${formatAbbreviatedNumber(balance)}`
+              formatAbbreviatedNumber(balance)
             )}
           </div>
           <div className="balance-currency">{t('account.currency')}</div>
@@ -580,35 +588,32 @@ export default function AccountPage() {
                 <p>{error}</p>
               </div>
             ) : filteredTransactions.length > 0 ? (
-              <>
-                {filteredTransactions.map((tx, index) => (
-                  <div
-                    key={tx.id}
-                    ref={
-                      index === filteredTransactions.length - 1
-                        ? lastTransactionElementRef
-                        : undefined
-                    }
-                  >
-                    <Transaction
-                      txAddress={tx.txAddress}
-                      token={tx.token}
-                      amount={tx.amount}
-                      type={tx.type}
-                      date={tx.date}
-                      id={tx.id}
-                    />
-                  </div>
-                ))}
-
+              <div className="transaction-items-container">
+                {filteredTransactions.map((tx, index) => {
+                  const isLast = index === filteredTransactions.length - 1;
+                  return (
+                    <div
+                      className="transaction-item-wrapper"
+                      key={`${tx.id}-${index}`}
+                      ref={isLast ? lastTransactionElementRef : null}
+                    >
+                      <Transaction
+                        txAddress={tx.txAddress}
+                        token={tx.token}
+                        amount={tx.valueInIDR}
+                        type={tx.type}
+                        date={tx.date}
+                        id={tx.hash}
+                      />
+                    </div>
+                  );
+                })}
                 {isLoadingMore && (
                   <div className="loading-more-container">
                     <TransactionSkeleton count={1} />
                   </div>
                 )}
-
-
-              </>
+              </div>
             ) : (
               <div className="empty-transactions" style={{
                 display: 'flex',
@@ -636,6 +641,7 @@ export default function AccountPage() {
                 </h3>
               </div>
             )}
+
           </div>
         </div>
       </div>

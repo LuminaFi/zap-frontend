@@ -32,21 +32,21 @@ export const Transaction: React.FC<TransactionProps> = ({
     if (!dateString) return '';
 
     try {
-      
+
       let date;
-      
+
       if (/^\d+$/.test(dateString)) {
         date = new Date(Number(dateString) * 1000);
       } else {
         date = new Date(dateString);
       }
-      
-      
+
+
       if (isNaN(date.getTime())) {
         return dateString;
       }
-      
-      
+
+
       return date.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -61,6 +61,7 @@ export const Transaction: React.FC<TransactionProps> = ({
   };
 
   const handleClick = () => {
+    console.log(id);
     if (id) {
       router.push(`/transaction/${id}`);
     }
@@ -70,7 +71,7 @@ export const Transaction: React.FC<TransactionProps> = ({
     <div
       className={`transaction-item ${isReceived ? 'transaction-item--received' : 'transaction-item--sent'}`}
       onClick={handleClick}
-      style={{ cursor: id ? 'pointer' : 'default' }}
+      style={{ cursor: id ? 'pointer' : 'default', marginTop: '10px' }}
     >
       <div className="transaction-item__icon">
         {isReceived ? (

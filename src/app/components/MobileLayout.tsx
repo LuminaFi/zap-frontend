@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BiQrScan } from 'react-icons/bi';
@@ -8,22 +8,42 @@ import { MdOutlineAccountBalanceWallet } from 'react-icons/md';
 import { RiWalletLine } from 'react-icons/ri';
 import { ProtectedRoute } from '../util/protected';
 import { useLanguage } from '../providers/LanguageProvider';
+import { useAccount } from 'wagmi';
+
+const getInitials = (name: string) => {
+  if (!name) return '';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
 
 interface MobileLayoutProps {
   children: ReactNode;
   title: string;
   showAvatar?: boolean;
-  avatarText?: string;
 }
 
 export const MobileLayout: React.FC<MobileLayoutProps> = ({
   children,
   title,
   showAvatar = false,
-  avatarText = 'JK'
 }) => {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { address } = useAccount();
+  const [avatarText, setAvatarText] = useState('');
+  const avatarColor = '#FFD700'; // Gold/yellow color
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && address) {
+      const savedName = localStorage.getItem(`displayName_${address}`);
+      if (savedName) {
+        setAvatarText(getInitials(savedName));
+      } else {
+        setAvatarText(address.substring(2, 4).toUpperCase());
+      }
+    }
+  }, [address]);
 
   return (
     <ProtectedRoute>
@@ -31,7 +51,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
         <div className="mobile-container__header">
           <h1 className="mobile-container__header-title">{title}</h1>
           {showAvatar && (
-            <Link href="/profile" className="mobile-container__header-avatar">
+            <Link href="/profile" className="mobile-container__header-avatar" style={{ backgroundColor: avatarColor }}>
               {avatarText}
             </Link>
           )}
@@ -67,6 +87,6 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
         </div>
       </div>
     </ProtectedRoute>
-    
+
   );
 }; 
