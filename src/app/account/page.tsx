@@ -15,6 +15,7 @@ import { DirectionType, FilterType, SortType, TransactionData } from './types';
 import { formatAbbreviatedNumber } from '@/utils/formatNumber';
 import { getFilterDisplayText } from '@/utils/getFilterDisplayText';
 import { getBalance, getTransaction } from './apiRequest';
+import { useAccount } from 'wagmi';
 
 export default function AccountPage() {
   const { t } = useLanguage();
@@ -65,7 +66,7 @@ export default function AccountPage() {
   const limit = 5;
 
   const observer = useRef<IntersectionObserver | null>(null);
-  const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
+  const { address: userAddress } = useAccount();
 
   useEffect(() => {
     if (showFilterModal) {
@@ -346,15 +347,6 @@ export default function AccountPage() {
             )}
           </div>
           <div className="balance-currency">{t('account.currency')}</div>
-
-          {/* <div className="quick-actions">
-            <Button variant="primary" size="small" fullWidth={false} className="action-button">
-              <FiArrowUpRight /> <span>{t('account.send')}</span>
-            </Button>
-            <Button variant="outline" size="small" fullWidth={false} className="action-button">
-              <FiArrowDownLeft /> <span>{t('account.receive')}</span>
-            </Button>
-          </div> */}
         </div>
 
         <div className="transactions-section">
