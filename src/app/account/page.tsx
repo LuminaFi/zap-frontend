@@ -6,7 +6,7 @@ import { TransactionSkeleton } from '@/components/TransactionSkeleton';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
-import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw, FiInbox } from 'react-icons/fi';
+import { FiFilter, FiCalendar, FiRefreshCw, FiInbox } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/providers/LanguageProvider';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -347,14 +347,14 @@ export default function AccountPage() {
           </div>
           <div className="balance-currency">{t('account.currency')}</div>
 
-          <div className="quick-actions">
+          {/* <div className="quick-actions">
             <Button variant="primary" size="small" fullWidth={false} className="action-button">
               <FiArrowUpRight /> <span>{t('account.send')}</span>
             </Button>
             <Button variant="outline" size="small" fullWidth={false} className="action-button">
               <FiArrowDownLeft /> <span>{t('account.receive')}</span>
             </Button>
-          </div>
+          </div> */}
         </div>
 
         <div className="transactions-section">
