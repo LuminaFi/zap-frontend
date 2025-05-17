@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 import { BiQrScan } from 'react-icons/bi';
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md';
 import { RiWalletLine } from 'react-icons/ri';
-import { ProtectedRoute } from '../util/protected';
-import { useLanguage } from '../providers/LanguageProvider';
+import { ProtectedRoute } from '@/providers/ProtectedRoute';
+import { useLanguage } from '@/providers/LanguageProvider';
 import { useAccount } from 'wagmi';
 
 const getInitials = (name: string) => {

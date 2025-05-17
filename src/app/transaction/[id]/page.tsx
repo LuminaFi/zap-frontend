@@ -1,163 +1,36 @@
 "use client";
 
-import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { MobileLayout } from '../../components/MobileLayout';
+import { MobileLayout } from '@/components/MobileLayout';
 import { FiArrowLeft, FiArrowUpRight, FiArrowDownLeft, FiExternalLink } from 'react-icons/fi';
-import { Button } from '../../components/Button';
+import { Button } from '@/components/Button';
 import { useAccount } from 'wagmi';
-
-interface TransactionDetails {
-  hash: string;
-  from: string;
-  to: string;
-  value: string;
-  valueInEther?: string;
-  valueInIDR?: string;
-  timestamp: string | number;
-  formattedDate?: string;
-  status?: string;
-  gasUsed?: string;
-  gasPrice?: string;
-  blockNumber: number;
-  token: string;
-}
+import { useQuery } from '@tanstack/react-query';
+import { getTransactionDetail } from './apiRequest';
+import { formatDateTime } from '@/utils/formatDateTime';
+import { truncateAddress } from '@/utils/truncateAddress';
+import { getTransactionFormattedAmount } from '@/utils/getTransactionFormattedAmount';
+import { TransactionDetails } from './types';
+import { openTransactionInExplorer } from '@/utils/openTransactionInExplorer';
 
 export default function TransactionDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [transaction, setTransaction] = useState<TransactionDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { address: userAddress } = useAccount();
 
-  // Function to format currency values
-  const formatAbbreviatedNumber = (numStr: string): string => {
-    if (!numStr) return 'Rp0';
-
-    // Remove all characters except digits and decimal point
-    const cleanedStr = numStr.replace(/[^\d.]/g, '');
-    const parts = cleanedStr.split('.');
-    const integerPart = parts[0];
-    
-    // If number is 20 digits or more, use abbreviated format
-    if (integerPart.length >= 20) {
-      const firstDigits = integerPart.substring(0, 4);
-      const formatted = `${firstDigits.substring(0, 2)}.${firstDigits.substring(2, 4)}`;
-
-      if (integerPart.length >= 30) return `Rp${formatted} Quint.`;
-      if (integerPart.length >= 27) return `Rp${formatted} Quad.`;
-      if (integerPart.length >= 24) return `Rp${formatted} Tril.`;
-      if (integerPart.length >= 21) return `Rp${formatted} Bil.`;
-
-      return `Rp${formatted} Mil.`;
-    }
-
-    // Parse as float to preserve decimal values
-    const number = parseFloat(cleanedStr);
-    
-    // If the number is very small but not zero, show it with decimal places
-    if (number > 0 && number < 1) {
-      return `Rp${number.toFixed(4)}`;
-    }
-    
-    // For zero values, explicitly check to avoid displaying Rp0 for small non-zero values
-    if (number === 0) {
-      return 'Rp0';
-    }
-    
-    // For regular numbers, use locale formatting
-    return number.toLocaleString('id-ID', { 
-      style: 'currency', 
-      currency: 'IDR', 
-      maximumFractionDigits: 0 
-    });
-  };
-
-  useEffect(() => {
-    const fetchTransactionDetails = async () => {
-      if (!params.id) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`https://zap-service-jkce.onrender.com/api/transaction/${params.id}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch transaction: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch transaction');
-        }
-
-        setTransaction(data.transaction);
-      } catch (err) {
-        console.error('Error fetching transaction details:', err);
-        setError('Failed to load transaction details. Please try again later.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTransactionDetails();
-  }, [params.id]);
-
-  const formatDateTime = (dateString?: string | number) => {
-    if (!dateString) return '';
-
-    try {
-
-      const date = typeof dateString === 'number'
-        ? new Date(dateString * 1000)
-        : /^\d+$/.test(String(dateString))
-          ? new Date(Number(dateString) * 1000)
-          : new Date(dateString);
-
-
-      if (isNaN(date.getTime())) {
-        return String(dateString);
-      }
-
-
-      return date.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch {
-      return String(dateString);
-    }
-  };
-
-  const truncateAddress = (address: string) => {
-    if (!address || address.length < 10) return address;
-    return `${address.substring(0, 10)}...${address.substring(address.length - 8)}`;
-  };
+  const {
+    data: transaction,
+    isLoading: isLoading,
+    error
+  } = useQuery<TransactionDetails>({
+    queryKey: [`fetch-transaction-detail`],
+    queryFn: () => getTransactionDetail(params)
+  });
 
   const isSent = transaction?.from?.toLowerCase() === userAddress?.toLowerCase();
+
   const handleBack = () => {
     router.back();
-  };
-  const openExplorer = () => {
-    window.open(`https://sepolia-blockscout.lisk.com/tx/${transaction?.hash}`, '_blank');
-  };
-
-  // Get formatted amount value, prioritizing valueInIDR when available
-  const getFormattedAmount = () => {
-    if (!transaction) return '';
-    
-    if (transaction.valueInIDR) {
-      return formatAbbreviatedNumber(transaction.valueInIDR);
-    }
-    
-    return formatAbbreviatedNumber(transaction.valueInEther || transaction.value);
   };
 
   return (
@@ -191,7 +64,7 @@ export default function TransactionDetailPage() {
           </div>
         ) : error ? (
           <div className="transaction-detail-error">
-            <p>{error}</p>
+            <p>{error.message}</p>
             <Button variant="primary" onClick={handleBack}>Return to Transactions</Button>
           </div>
         ) : transaction ? (
@@ -204,7 +77,7 @@ export default function TransactionDetailPage() {
                 {isSent ? 'Sent' : 'Received'} {transaction.token || 'IDRX'}
               </h2>
               <div className={`transaction-amount ${isSent ? 'sent' : 'received'}`}>
-                {isSent ? '- ' : '+ '}{getFormattedAmount()}
+                {isSent ? '- ' : '+ '}{getTransactionFormattedAmount(transaction)}
               </div>
               <div className="transaction-date">
                 {formatDateTime(transaction.timestamp)}
@@ -263,7 +136,7 @@ export default function TransactionDetailPage() {
               <Button
                 variant="outline"
                 className="explorer-button"
-                onClick={openExplorer}
+                onClick={() => openTransactionInExplorer(transaction)}
                 fullWidth
               >
                 View on Explorer <FiExternalLink />

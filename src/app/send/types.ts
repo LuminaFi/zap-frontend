@@ -68,7 +68,7 @@ export interface TransferFeeResponse {
   result: TransferFee;
 }
 
-export interface calculateAmountResponse {
+export interface CalculateAmountResponse {
   success: boolean;
   token: string;
   sourceAmount: number;

@@ -1,36 +1,32 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { MobileLayout } from "../components/MobileLayout";
+import { MobileLayout } from "@/components/MobileLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BACKEND_URL, ZAP_POOL } from "../util/constant";
+import { ZAP_POOL } from "@/utils/constant";
 import { erc20Abi, parseUnits } from "viem";
 import { DefaultError, useMutation, useQuery } from "@tanstack/react-query";
 import type {
   AddressType,
-  calculateAmountResponse,
   Network,
   QRTypes,
   SendData,
   Token,
-  TokenPrice,
-  TransferFeeResponse,
   TransferIDRXPayload,
   TransferIDRXResponse,
   TransferLimitResponse,
 } from "./types";
-import { Button } from "../components/Button";
-import { useLanguage } from "../providers/LanguageProvider";
-import { useTheme } from "../providers/ThemeProvider";
+import { Button } from "../../components/Button";
+import { useLanguage } from "../../providers/LanguageProvider";
+import { useTheme } from "../../providers/ThemeProvider";
 import { FaChevronDown } from "react-icons/fa";
 import Image from "next/image";
-import { TransferLimit } from "../components/TransferLimit";
-import { getTransferLimit } from "../util/getTransferLimit";
-import { formatNumber } from "../util/formatNumber";
+import { TransferLimit } from "../../components/TransferLimit";
+import { getTransferLimit } from "../../utils/getTransferLimit";
+import { formatNumber } from "../../utils/formatNumber";
 import { readContract, writeContract } from "@wagmi/core";
-import { config } from "../configs/xellarConfig";
-import { useConnections } from "wagmi";
-import { sepolia } from "viem/chains";
+import { config } from "../../configs/xellarConfig";
+import { calculateDynamicQrAmount, calculateStaticQrAmount, getNetworkTokens, getSupportedNetworks, getTokenPrice, transfer } from "./apiRequest";
 
 const copyAnimationStyles = `
   @keyframes fadeIn {
@@ -75,119 +71,6 @@ const copyAnimationStyles = `
   }
 `;
 
-const transfer = async ({
-  recipientAddress,
-  idrxAmount,
-}: TransferIDRXPayload) => {
-  const response = await fetch(`${BACKEND_URL}/meta-transfer`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      recipient: recipientAddress,
-      idrxAmount: String(idrxAmount),
-    }),
-  });
-
-  const data = await response.json();
-
-  return {
-    success: data.success,
-    transferId: data.transferId,
-    recipient: data.recipient,
-    amount: data.amount,
-    transactionHash: data.transactionHash,
-  };
-};
-
-const getSupportedNetworks = async (): Promise<Network[]> => {
-  try {
-    const response = await fetch('https://zap-service-jkce.onrender.com/api/supported-networks', {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch networks: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (Array.isArray(data)) {
-      return data;
-    } else if (data && typeof data === 'object') {
-      const possibleArrays = Object.values(data).filter(Array.isArray);
-      if (possibleArrays.length > 0) {
-        return possibleArrays[0] as Network[];
-      }
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Error fetching networks:', error);
-    return [];
-  }
-};
-
-const getTokenPrice = async (token: string): Promise<TokenPrice> => {
-  try {
-    const response = await fetch(`https://zap-service-jkce.onrender.com/api/token-price/${token}`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch token price: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    return data
-  } catch (error) {
-    console.error('Error fetching networks:', error);
-    throw error;
-  }
-};
-
-const getNetworkTokens = async (networkId: string): Promise<Token[]> => {
-  try {
-    const response = await fetch(`https://zap-service-jkce.onrender.com/api/network/${networkId}/tokens`, {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch tokens: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (Array.isArray(data)) {
-      return data;
-    } else if (data && typeof data === 'object' && data.tokens) {
-      return data.tokens;
-    } else if (data && typeof data === 'object') {
-      const possibleArrays = Object.values(data).filter(Array.isArray);
-      if (possibleArrays.length > 0) {
-        return possibleArrays[0] as Token[];
-      }
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Error fetching tokens:', error);
-    return [];
-  }
-};
-
 export default function SendPage() {
   const { t } = useLanguage();
   const { theme } = useTheme();
@@ -197,13 +80,8 @@ export default function SendPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const search = useSearchParams();
-  
-  const [networks, setNetworks] = useState<Network[]>([]);
-  const [isLoadingNetworks, setIsLoadingNetworks] = useState(true);
-  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
 
-  const [tokens, setTokens] = useState<Token[]>([]);
-  const [isLoadingTokens, setIsLoadingTokens] = useState(false);
+  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [isTokenDropdownOpen, setIsTokenDropdownOpen] = useState(false);
   const tokenDropdownRef = useRef<HTMLDivElement>(null);
@@ -215,13 +93,32 @@ export default function SendPage() {
   
   const [isCopied, setIsCopied] = useState(false);
 
-  // const { data: tokenHash, error: tokenError, writeContract} = useWriteContract();
+  const {
+    data: limitData,
+    isLoading: isLoadingLimit,
+  } = useQuery<TransferLimitResponse>({
+    queryKey: [`limit-${selectedToken?.symbol}`],
+    queryFn: () => getTransferLimit(selectedToken!),
+  });
 
-  // const {
-  //   isLoading: isConfirming,
-  //   isSuccess: isConfirmed,
-  //   isError: isErrorTrf,
-  // } = useWaitForTransactionReceipt({ hash: tokenHash });
+  const {
+    data: networks,
+    isLoading: isLoadingNetworks,
+    refetch: refetchNetworks
+  } = useQuery<Network[]>({
+    queryKey: [`fetch-network`],
+    queryFn: getSupportedNetworks
+  });
+
+  const {
+    data: tokens,
+    isLoading: isLoadingTokens,
+    refetch: refetchTokens
+  } = useQuery<Token[]>({
+    queryKey: [`fetch-token`],
+    queryFn: () => getNetworkTokens(selectedNetwork!.id)
+  });
+
   const { mutate: transferIDRX, isPending: isLoadingTrf } = useMutation<
     TransferIDRXResponse,
     DefaultError,
@@ -232,54 +129,18 @@ export default function SendPage() {
     onSuccess: () => router.push("/account"),
     onError: (error) => alert(error.message),
   });
-  const {
-    data: limitData,
-    isLoading: isLoadingLimit,
-  } = useQuery<TransferLimitResponse>({
-    queryKey: [`limit-${selectedToken?.symbol}`],
-    queryFn: () => getTransferLimit(selectedToken!),
-  });
 
   useEffect(() => {
-    const fetchNetworks = async () => {
-      setIsLoadingNetworks(true);
-      try {
-        const networksData = await getSupportedNetworks();
-        setNetworks(networksData);
-        if (networksData.length > 0) {
-          setSelectedNetwork(networksData[0]);
-        }
-      } catch (err) {
-        console.error('Error loading networks:', err);
-      } finally {
-        setIsLoadingNetworks(false);
-      }
-    };
-
-    fetchNetworks();
-  }, []);
-
-  useEffect(() => {
-    if (selectedNetwork) {
-      setIsLoadingTokens(true);
-      setSelectedToken(null);
-      
-      getNetworkTokens(selectedNetwork.id)
-        .then(tokensData => {
-          setTokens(tokensData);
-          const supportedToken = tokensData.find(token => token.addresses.testnet);
-          if (supportedToken) {
-            setSelectedToken(supportedToken);
-          }
-        })
-        .catch(err => {
-          console.error('Error loading tokens:', err);
-        })
-        .finally(() => {
-          setIsLoadingTokens(false);
-        });
+    if (networks?.length) {
+      setSelectedNetwork(networks[0]);
     }
-  }, [selectedNetwork]);
+  }, [networks]);
+
+  useEffect(() => {
+    if (tokens?.length) {
+      setSelectedToken(tokens[0]);
+    }
+  }, [tokens]);
 
   useEffect(() => {
     const address = search.get("address") as AddressType;
@@ -292,21 +153,6 @@ export default function SendPage() {
       setIsValidAmount(true)
     }
   }, [search]);
-
-  // useEffect(() => {
-  //   if (isConfirmed && !isErrorTrf) {
-  //     transferIDRX({
-  //       recipientAddress: sendData.address!,
-  //       idrxAmount: sendData.amount!,
-  //     });
-  //   }
-  // }, [
-  //   isConfirmed,
-  //   sendData.address,
-  //   sendData.amount,
-  //   transferIDRX,
-  //   isErrorTrf,
-  // ]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -324,47 +170,16 @@ export default function SendPage() {
     };
   }, []);
 
-  const calculateStaticQrAmount = async (amount: number) => {
-    const calculateAmountResponse = await fetch(
-      `${BACKEND_URL}/calculate-fees?token=${selectedToken?.id}&amount=${amount}`,
-      {
-        method: "GET",
-      }
-    );
-    const amountWithFee: TransferFeeResponse =
-      await calculateAmountResponse.json();
-    if (!amountWithFee || !amountWithFee.success) {
-      throw new Error("Failed to calculate amount");
-    }
-
-    return `${ amountWithFee.result.amountBeforeFees + amountWithFee.result.totalFeeAmount }`;
-  };
-
-  const calculateDynamicQrAmount = async (amount: number) => {
-    const calculateAmountResponse = await fetch(
-      `${BACKEND_URL}/calculate-source?token=${selectedToken?.id}&idrxAmount=${amount}`,
-      {
-        method: "GET",
-      }
-    );
-    const amountWithFee: calculateAmountResponse =
-      await calculateAmountResponse.json();
-    if (!amountWithFee || !amountWithFee.success) {
-      throw new Error("Failed to calculate amount");
-    }
-
-    return `${ amountWithFee.fees.amountBeforeFees + amountWithFee.fees.totalFeeAmount }`;
-  };
-
-  const calculateAmount = async (amount: number) => {
-    return qrType === "static" ? calculateStaticQrAmount(amount) : calculateDynamicQrAmount(amount);
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    calculateAmount(sendData.amount!)
+    const calculateAmount = async () => {
+      const amount = sendData.amount!;
+      return qrType === "static" ? calculateStaticQrAmount(amount, selectedToken) : calculateDynamicQrAmount(amount, selectedToken);
+    }
+
+    calculateAmount()
       .then(async (amount) => {
         const decimal = await readContract(config, {
           address: `${selectedToken?.addresses.testnet}` as AddressType,
@@ -372,14 +187,14 @@ export default function SendPage() {
           functionName: "decimals",
         });
 
-        const result = await writeContract(config, {
+        await writeContract(config, {
           address: `${selectedToken?.addresses.testnet}` as AddressType,
           abi: erc20Abi,
           functionName: "transfer",
           args: [ZAP_POOL, parseUnits(amount, decimal)],
         });
 
-        const tokenPrice = await getTokenPrice(selectedToken?.symbol!);
+        const tokenPrice = await getTokenPrice(selectedToken!.symbol);
 
         transferIDRX({
           recipientAddress: sendData.address!,
@@ -417,21 +232,16 @@ export default function SendPage() {
     }
   };
 
-  // Handler for amount input changes
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
-    // Remove commas for the actual numeric value
     const numericValue = value.replace(/\,/g, '');
     const newAmount = numericValue === '' ? undefined : Number(numericValue);
     
-    // Store the actual numeric value in state
     setSendData({
       ...sendData,
       amount: newAmount,
     });
     
-    // Update the formatted display value
     if (value.includes(".")) {
       setFormattedAmount(value);
     } else {
@@ -442,19 +252,8 @@ export default function SendPage() {
       return;
     }
 
-    if (newAmount < parseFloat(limitData!.tokenLimits.minTokenAmount) || newAmount > parseFloat(limitData!.tokenLimits.maxTokenAmount)) {
-      setIsValidAmount(false);
-    } else {
-      setIsValidAmount(true);
-    }
+    setIsValidAmount(!(newAmount < parseFloat(limitData!.tokenLimits.minTokenAmount) || newAmount > parseFloat(limitData!.tokenLimits.maxTokenAmount)));
   };
-
-  // On component mount, initialize formatted amount if there's an amount in sendData
-  useEffect(() => {
-    if (sendData.amount) {
-      setFormattedAmount(formatNumber(String(sendData.amount)));
-    }
-  }, [sendData.amount]);
 
   return (
     <MobileLayout title={t("send.title") || "Send"} showAvatar>
@@ -481,7 +280,7 @@ export default function SendPage() {
                     backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
                     animation: 'pulse 1.5s infinite'
                   }}></div>
-                ) : networks.length === 0 ? (
+                ) : networks?.length === 0 ? (
                   <div style={{
                     padding: '12px 16px',
                     borderRadius: '8px',
@@ -493,13 +292,7 @@ export default function SendPage() {
                     No networks available from API
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsLoadingNetworks(true);
-                        getSupportedNetworks().then(data => {
-                          setNetworks(data);
-                          setIsLoadingNetworks(false);
-                        });
-                      }}
+                      onClick={() => {refetchNetworks()}}
                       style={{
                         display: 'block',
                         margin: '8px auto 0',
@@ -575,7 +368,7 @@ export default function SendPage() {
                           overflowY: 'auto'
                         }}
                       >
-                        {networks.map((network) => (
+                        {networks?.map((network) => (
                           <div
                             key={network.id}
                             onClick={() => handleNetworkSelect(network)}
@@ -636,7 +429,7 @@ export default function SendPage() {
                       backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
                       animation: 'pulse 1.5s infinite'
                     }}></div>
-                  ) : tokens.length === 0 ? (
+                  ) : tokens?.length === 0 ? (
                     <div style={{
                       padding: '12px 16px',
                       borderRadius: '8px',
@@ -648,13 +441,7 @@ export default function SendPage() {
                       No tokens available for this network
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsLoadingTokens(true);
-                          getNetworkTokens(selectedNetwork.id).then(data => {
-                            setTokens(data);
-                            setIsLoadingTokens(false);
-                          });
-                        }}
+                        onClick={() => refetchTokens()}
                         style={{
                           display: 'block',
                           margin: '8px auto 0',
@@ -741,7 +528,7 @@ export default function SendPage() {
                         }}
                       >
                         <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                          {tokens.map((token) => (
+                          {tokens?.map((token) => (
                             <div
                               key={token.id}
                               onClick={() => handleTokenSelect(token)}
@@ -938,21 +725,15 @@ export default function SendPage() {
               </>
             )}
 
-            {/* {tokenError && (
-              <div className={`error-message ${theme}`}>
-                {(tokenError as BaseError).shortMessage || tokenError.message}
-              </div>
-            )} */}
-
             <Button
               type="submit"
               variant="primary"
               size="large"
               fullWidth
-              disabled={isSubmitting || !selectedNetwork || networks.length === 0 || !selectedToken || !selectedToken.addresses.testnet || !isValidAmount}
+              disabled={isSubmitting || !selectedNetwork || networks?.length === 0 || !selectedToken || !selectedToken.addresses.testnet || !isValidAmount}
               className="send-button"
             >
-              { networks.length === 0
+              { networks?.length === 0
                   ? "No Networks Available"
                   : !selectedToken
                     ? "Select a token to continue"

@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { useTheme } from '../providers/ThemeProvider';
+import { useTheme } from '@/providers/ThemeProvider';
 import { FiSun, FiMoon } from 'react-icons/fi';
 
 interface ThemeToggleProps {

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { useEffect } from 'react';
 import { ConnectButton } from '@xellar/kit';
-import { UnprotectedRoute } from './util/unprotected';
+import { UnprotectedRoute } from '@/providers/UnprotectedRoute';
 import Image from 'next/image';
 
 export default function Home() {

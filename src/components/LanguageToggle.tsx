@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { useLanguage, Language } from '../providers/LanguageProvider';
+import { useLanguage, Language } from '@/providers/LanguageProvider';
 import { FiGlobe } from 'react-icons/fi';
 
 interface LanguageToggleProps {
