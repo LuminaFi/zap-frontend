@@ -10,6 +10,7 @@ import { FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCalendar, FiRefreshCw, FiI
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '../providers/LanguageProvider';
 import { useTheme } from '../providers/ThemeProvider';
+import { useAccount } from 'wagmi';
 import React from 'react';
 
 const formatAbbreviatedNumber = (numStr: string): string => {
@@ -171,7 +172,8 @@ export default function AccountPage() {
   const limit = 5;
 
   const observer = useRef<IntersectionObserver | null>(null);
-  const userAddress = '0x85E0FE0Ef81608A6C266373fC8A3B91dF622AF7a';
+  const { address: userAddress } = useAccount();
+
   const buildQueryParams = useCallback((page: number) => {
     const params = new URLSearchParams();
 
@@ -469,14 +471,14 @@ export default function AccountPage() {
           </div>
           <div className="balance-currency">{t('account.currency')}</div>
 
-          <div className="quick-actions">
+          {/* <div className="quick-actions">
             <Button variant="primary" size="small" fullWidth={false} className="action-button">
               <FiArrowUpRight /> <span>{t('account.send')}</span>
             </Button>
             <Button variant="outline" size="small" fullWidth={false} className="action-button">
               <FiArrowDownLeft /> <span>{t('account.receive')}</span>
             </Button>
-          </div>
+          </div> */}
         </div>
 
         <div className="transactions-section">
