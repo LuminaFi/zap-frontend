@@ -170,12 +170,6 @@ export default function SendPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (sendData.amount) {
-      setFormattedAmount(formatNumber(String(sendData.amount)));
-    }
-  }, [sendData.amount]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -200,7 +194,7 @@ export default function SendPage() {
           args: [ZAP_POOL, parseUnits(amount, decimal)],
         });
 
-        const tokenPrice = await getTokenPrice(selectedToken?.symbol!);
+        const tokenPrice = await getTokenPrice(selectedToken!.symbol);
 
         transferIDRX({
           recipientAddress: sendData.address!,
@@ -258,11 +252,7 @@ export default function SendPage() {
       return;
     }
 
-    if (newAmount < parseFloat(limitData!.tokenLimits.minTokenAmount) || newAmount > parseFloat(limitData!.tokenLimits.maxTokenAmount)) {
-      setIsValidAmount(false);
-    } else {
-      setIsValidAmount(true);
-    }
+    setIsValidAmount(!(newAmount < parseFloat(limitData!.tokenLimits.minTokenAmount) || newAmount > parseFloat(limitData!.tokenLimits.maxTokenAmount)));
   };
 
   return (
